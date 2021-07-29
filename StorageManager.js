@@ -15,7 +15,7 @@ async function store(timestamp, kind, sourceFilename, sourceContent) {
 
 function watchHandler(kind) {
   return (async path => {
-    // Handle symlink glitch
+    // Handle https://github.com/paulmillr/chokidar/issues/544
     if (!path.endsWith(".elm")) {
       return;
     }
