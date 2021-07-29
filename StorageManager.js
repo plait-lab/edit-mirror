@@ -1,3 +1,4 @@
+const CWD = process.cwd();
 const FILE_LOG_PATH = "log/file_log/";
 
 const path = require("path");
@@ -14,13 +15,17 @@ async function store(timestamp, kind, sourceFilename, sourceContent) {
 
 function watchHandler(kind) {
   return (async path => {
+    // Handle symlink glitch
+    if (!path.endsWith(".elm")) {
+      return;
+    }
     console.log(path);
     const content = await fsp.readFile(path);
     store(new Date().getTime(), "watch-" + kind, path.slice(3), content);
   });
 }
 
-chokidar.watch("../**/*.elm", { ignored: "../" + path.basename(process.cwd()) })
+chokidar.watch("../**/*.elm", { ignored: "../" + path.basename(CWD) })
   .on("add", watchHandler("add"))
   .on("change", watchHandler("change"))
   .on("unlink", watchHandler("unlink"));
