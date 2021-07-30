@@ -5,6 +5,7 @@ const path = require("path");
 const fsp = require("fs/promises");
 const chokidar = require("chokidar");
 
+// TODO we probably want to buffer this...
 async function store(timestamp, kind, sourceFilename, sourceContent) {
   const logBasePath = FILE_LOG_PATH + sourceFilename;
   const logFilename = logBasePath + "/" + timestamp + "-" + kind;

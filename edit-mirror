@@ -1,0 +1,112 @@
+#!/usr/bin/env node
+
+// IO helpers
+
+const fs = require("fs");
+
+function get(n) {
+  const buffer = Buffer.alloc(n);
+  fs.readSync(0, buffer);
+  return buffer.toString("utf8");
+}
+
+function getLine() {
+  let line = "";
+  while (true) {
+    const c = get(1);
+    if (c === "\n") {
+      break;
+    }
+    line += c;
+  }
+  return line;
+}
+
+function log(text) {
+  fs.appendFileSync("/Users/jlubin/Desktop/log.txt", text);
+}
+
+// Message helpers
+
+function sendMessage(content) {
+  console.log("Content-Length: " + content.length + "\r\n\r\n" + content);
+}
+
+function sendResponse(id, result) {
+  sendMessage(JSON.stringify({
+    id: id,
+    result: result,
+    jsonrpc: "2.0"
+  }));
+}
+
+// Listener
+
+function listen(handler) {
+  while (true) {
+    // Header (TODO assumes only Content-Length is present)
+    while (get(1) != " ");
+    const contentLength = parseInt(getLine());
+
+    // \r\n separates header from body
+    get(2);
+
+    // Body
+    const content = get(contentLength);
+    const message = JSON.parse(content);
+    handle(message);
+  }
+}
+
+// Handler
+
+let rootUri = null;
+
+function handle(msg) {
+  const timestamp = new Date().getTime();
+  log("\n\n" + JSON.stringify(msg));
+  switch (msg.method) {
+    case "initialize":
+      rootUri = msg.params.rootUri;
+      // TODO check for startup file in rootUri to see if we should enable
+      // plugin
+      // TODO start up chokidar
+      sendResponse(
+        msg.id,
+        { capabilities: { textDocumentSync: 1 } }
+      );
+      break;
+
+    case "didChange":
+      const uri = msg.params.textDocument.uri;
+      if (!uri.startsWith(rootUri)) {
+        // TODO should not happen
+      }
+      const contentChanges = msg.params.contentChanges;
+      const lastContentChange = contentChanges[contentChanges.length - 1];
+      if ("range" in lastContentChange) {
+        // TODO should not happen
+      }
+      const sourceFilename = uri.substring(rootUri.length + 1);
+      const sourceContent = latContentChange.text;
+      // TODO store(timestamp, buffer, sourceFilename, sourceContent)
+
+      break;
+
+    case "didOpen": // No new info
+    case "didClose": // No new info
+    case "didSave": // Handled by file system watcher
+      break;
+
+    default:
+      break;
+  }
+}
+
+// Main
+
+try {
+  listen(handle);
+} catch (err) {
+  log(err.toString());
+}
