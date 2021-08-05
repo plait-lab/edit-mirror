@@ -29,6 +29,8 @@ const LAST_UPLOADED_PATH = PLUGIN_DIR + "/last_uploaded.txt";
 const WATCHED_EXTENSION = ".elm";
 const WATCHED_FILES = ["**/*.elm", "elm.json"];
 
+const UPLOAD_THRESHOLD_HOURS = 6;
+
 const FILE_URI_PREFIX = "file://";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -120,6 +122,9 @@ function watchFiles() {
 // TODO if upload fails, don't want to try again for at least another 6 ish
 // hours maybe
 
+// TODO if doing AWS, we'll need to get a token from heroku then upload file to
+// AWS
+
 // 0. tar and gzip log folder
 // 1. Send form data request to Berkeley server with tarred file stream
 // 2. Wait for ACK response from Berkeley server
@@ -174,7 +179,7 @@ function upload() {
 async function uploadIfNecessary(currentTimestamp) {
   const lastUploaded = parseInt(await fsp.readFile(LAST_UPLOADED_PATH));
   const hoursElapsed = millisToHours(currentTimestamp - lastUploaded);
-  if (hoursElapsed > TODO) {
+  if (hoursElapsed > UPLOAD_THRESHOLD_HOURS) {
     log("Uploading after " + hoursElapsed.toFixed(2) + " hours");
     upload();
   }
