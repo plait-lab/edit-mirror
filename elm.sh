@@ -6,7 +6,7 @@ elm "$@"
 code=$?
 
 if [ "$1" == "make" ]; then
-  cl="log/compilation_log/"
+  cl="___edit-mirror___/logs/compilations"
   mkdir -p $cl
 
   elm "$@" --report=json \

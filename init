@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# confirm consent
+# ask for id, demographics
+# create PLUGIN_DIR and necessary subfolders/files
+# download/install lsp
+# instruct user to install language client in their editor configured for elm
+#    - need to look into having both the official lsp and my lsp installed for
+#      elm
+# put the elm.sh in PATH correctly somehow
+
+# directory structure
+#
+# ___edit-mirror___
+#   logs/
+#     files/
+#     compilations/
+#   id.txt
+#   demographics.txt
+#   .gitignore
