@@ -26,6 +26,9 @@ const FILE_LOG = LOGS_DIR + "/files";
 const ID_PATH = PLUGIN_DIR + "/id.txt";
 const LAST_UPLOADED_PATH = PLUGIN_DIR + "/last_uploaded.txt";
 
+const WATCHED_EXTENSION = ".elm";
+const WATCHED_FILES = ["**/*.elm", "elm.json"];
+
 const FILE_URI_PREFIX = "file://";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,7 +99,7 @@ async function store(timestamp, kind, sourcePath, sourceContent) {
 function watchHandler(kind) {
   return (async path => {
     // Handles https://github.com/paulmillr/chokidar/issues/544
-    if (!path.endsWith(".elm")) {
+    if (!path.endsWith(WATCHED_EXTENSION)) {
       return;
     }
     const content = kind === "unlink" ? "" : await fsp.readFile(path);
@@ -105,7 +108,7 @@ function watchHandler(kind) {
 }
 
 function watchFiles() {
-  chokidar.watch(["**/*.elm", "elm.json"], { ignored: PLUGIN_DIR + "/**" })
+  chokidar.watch(WATCHED_FILES, { ignored: PLUGIN_DIR + "/**" })
     .on("add", watchHandler("add"))
     .on("change", watchHandler("change"))
     .on("unlink", watchHandler("unlink"));
