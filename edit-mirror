@@ -15,7 +15,7 @@ const tar = require("tar");
 
 const read = util.promisify(fs.read);
 
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Constants
 
 const VERSION = "1.0";
@@ -24,11 +24,18 @@ const PLUGIN_DIR = "___edit-mirror___";
 const LOGS_DIR = PLUGIN_DIR + "/logs";
 const FILE_LOG = LOGS_DIR + "/files";
 const ID_PATH = PLUGIN_DIR + "/id.txt";
+const LAST_UPLOADED_PATH = PLUGIN_DIR + "/last_uploaded.txt";
 
 const FILE_URI_PREFIX = "file://";
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers
+
+// Time helpers
+
+function millisToHours(millis) {
+  return millis / 3_600_000;
+}
 
 // IO helpers
 
@@ -107,11 +114,14 @@ function watchFiles() {
 ////////////////////////////////////////////////////////////////////////////////
 // Uploader
 
+// TODO if upload fails, don't want to try again for at least another 6 ish
+// hours maybe
+
 // 0. tar and gzip log folder
 // 1. Send form data request to Berkeley server with tarred file stream
 // 2. Wait for ACK response from Berkeley server
 // 3. Delete files locally
-function uploadData() {
+function upload() {
   const form = new FormData();
 
   form.append("client_version", VERSION);
@@ -139,7 +149,7 @@ function uploadData() {
         res.resume();
         break;
 
-      default: // Error
+      default: // Error, TODO alert to user?
         res.setEncoding("utf8");
         let rawData = "";
         res.on("data", chunk => { rawData += chunk; });
@@ -156,6 +166,15 @@ function uploadData() {
   });
 
   form.pipe(req);
+}
+
+async function uploadIfNecessary(currentTimestamp) {
+  const lastUploaded = parseInt(await fsp.readFile(LAST_UPLOADED_PATH));
+  const hoursElapsed = millisToHours(currentTimestamp - lastUploaded);
+  if (hoursElapsed > TODO) {
+    log("Uploading after " + hoursElapsed.toFixed(2) + " hours");
+    upload();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -241,8 +260,7 @@ async function handle(msg) {
       const sourceContent = lastContentChange.text;
 
       await store(timestamp, "buffer", sourceFilename, sourceContent);
-
-      // TODO check if necessary to upload (it's been at least 1 day, etc.)
+      await uploadIfNecessary();
 
       break;
 
@@ -263,12 +281,17 @@ function tryUpdate() {
   // TODO
   // make http request to berkeley server for latest version string
   // if it's different than VERSION, make another request for the latest file
-  // download that file, replace current file with it, will be updated for next
-  // run
+  // download that file, replace current file with it
+  //   -> the program will be updated for the next run
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Main
 
-tryUpdate();
-listen(handle);
+try {
+  tryUpdate();
+  listen(handle);
+} catch (err) {
+  log("[ERROR] " + err.message);
+  throw err; // TODO display notification to user to contact admin
+}
