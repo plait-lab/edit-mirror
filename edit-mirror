@@ -317,7 +317,7 @@ process.on('uncaughtException', function (error) {
 });
 
 async function main() {
-  log("--- Starting new Edit Mirror session ---");
+  log("--- Starting new edit-mirror session ---");
   await tryUpdate();
   await listen(handle);
 }
