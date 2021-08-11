@@ -1,4 +1,4 @@
-#!/user/bin/env node
+#!/usr/bin/env node
 
 ////////////////////////////////////////////////////////////////////////////////
 // Imports
@@ -7,7 +7,7 @@ const util = require("util");
 const path = require("path");
 const fs = require("fs");
 const fsp = require("fs/promises");
-const https = require("https");
+const http = require("http"); // TODO: upgrade to https
 
 const chokidar = require("chokidar");
 const FormData = require("form-data");
@@ -20,18 +20,27 @@ const read = util.promisify(fs.read);
 
 const VERSION = "1.0";
 
+const SERVER_HOSTNAME = "localhost:8080";
+const UPLOAD_PATH = "upload";
+
+const UPLOAD_THRESHOLD_HOURS = 6;
+
 const PLUGIN_DIR = "___edit-mirror___";
 const LOGS_DIR = PLUGIN_DIR + "/logs";
-const FILE_LOG = LOGS_DIR + "/files";
+const FILE_LOG_DIR = LOGS_DIR + "/files";
 const ID_PATH = PLUGIN_DIR + "/id.txt";
-const LAST_UPLOADED_PATH = PLUGIN_DIR + "/last_uploaded.txt";
+const LAST_UPLOAD_ATTEMPT_PATH = PLUGIN_DIR + "/last_upload_attempt.txt";
 
 const WATCHED_EXTENSION = ".elm";
 const WATCHED_FILES = ["**/*.elm", "elm.json"];
 
-const UPLOAD_THRESHOLD_HOURS = 6;
-
 const FILE_URI_PREFIX = "file://";
+
+////////////////////////////////////////////////////////////////////////////////
+// Pseudo-constants (set once in init)
+
+let ROOT_PATH = null;
+let ID = null;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers
@@ -45,7 +54,7 @@ function millisToHours(millis) {
 // IO helpers
 
 async function get(n) {
-  const buffer = await read(0, Buffer.alloc(1), 0, 1, null);
+  const { buffer } = await read(0, Buffer.alloc(n), 0, n, null);
   return buffer.toString("utf8");
 }
 
@@ -65,8 +74,12 @@ function log(text) {
   const timestamp = new Date().getTime();
   fs.appendFileSync(
     "/Users/jlubin/Desktop/log.txt",
-    "[" + timestamp + "] " + text
+    "[" + timestamp + "] " + text + "\n"
   );
+}
+
+function dlog(text) {
+  log("[DEBUG] " + text);
 }
 
 // JSON RPC helpers
@@ -104,8 +117,9 @@ function watchHandler(kind) {
     if (!path.endsWith(WATCHED_EXTENSION)) {
       return;
     }
+    const timestamp = new Date().getTime();
     const content = kind === "unlink" ? "" : await fsp.readFile(path);
-    store(new Date().getTime(), "watched-" + kind, path.slice(3), content);
+    store(timestamp, "watched-" + kind, path, content);
   });
 }
 
@@ -119,20 +133,15 @@ function watchFiles() {
 ////////////////////////////////////////////////////////////////////////////////
 // Uploader
 
-// TODO if upload fails, don't want to try again for at least another 6 ish
-// hours maybe
-
-// TODO if doing AWS, we'll need to get a token from heroku then upload file to
-// AWS
-
 // 0. tar and gzip log folder
-// 1. Send form data request to Berkeley server with tarred file stream
-// 2. Wait for ACK response from Berkeley server
+// 1. Send form data request to DigitalOcean server with tarred file stream
+// 2. Wait for ACK response from DigitalOcean server
 // 3. Delete files locally
-function upload() {
+function sendUploadRequest() {
   const form = new FormData();
 
   form.append("client_version", VERSION);
+  form.append("client_id", ID);
 
   const zippedStream =
     tar.create(
@@ -144,8 +153,8 @@ function upload() {
 
   const req = http.request({
     method: "POST",
-    host: "TODO",
-    path: "TODO",
+    host: SERVER_HOSTNAME,
+    path: UPLOAD_PATH,
     headers: form.getHeaders()
   }, res => {
     switch (res.statusCode) {
@@ -176,12 +185,18 @@ function upload() {
   form.pipe(req);
 }
 
-async function uploadIfNecessary(currentTimestamp) {
-  const lastUploaded = parseInt(await fsp.readFile(LAST_UPLOADED_PATH));
+async function upload(currentTimestamp) {
+  const lastUploaded = parseInt(await fsp.readFile(LAST_UPLOAD_ATTEMPT_PATH));
   const hoursElapsed = millisToHours(currentTimestamp - lastUploaded);
+  dlog("Hours elapsed: " + hoursElapsed);
   if (hoursElapsed > UPLOAD_THRESHOLD_HOURS) {
     log("Uploading after " + hoursElapsed.toFixed(2) + " hours");
-    upload();
+    // TODO prompt for consent
+    const consent = true;
+    if (consent) {
+      sendUploadRequest();
+    }
+    await fsp.writeFile(LAST_UPLOAD_ATTEMPT_PATH, currentTimestamp.toString());
   }
 }
 
@@ -189,6 +204,7 @@ async function uploadIfNecessary(currentTimestamp) {
 // Language server protocol
 
 async function listen(handler) {
+  log("Listening...");
   while (true) {
     const header = {};
     while (true) {
@@ -204,29 +220,24 @@ async function listen(handler) {
     const content = await get(contentLength);
 
     // Body
-    handle(JSON.parse(content));
+    await handle(JSON.parse(content));
   }
 }
-
-let ROOT_PATH = null;
-let ID = null;
 
 async function handle(msg) {
   const timestamp = new Date().getTime();
 
   switch (msg.method) {
     case "initialize":
+      log("Starting initialization...");
+
       const rootUri = msg.params.rootUri;
       if (!rootUri.startsWith(FILE_URI_PREFIX)) {
         throw new Error("Non-file URIs not supported: '" + rootUri + "'");
       }
       ROOT_PATH = rootUri.substring(FILE_URI_PREFIX.length);
 
-			try {
-        ID = await fsp.readFile(ID_FILE_PATH);
-			} catch {
-				return;
-			}
+      ID = await fsp.readFile(ID_PATH);
 
 			watchFiles();
 
@@ -235,9 +246,11 @@ async function handle(msg) {
 				{ capabilities: { textDocumentSync: 1 } }
 			);
 
+      log("Initialized!");
+
       break;
 
-    case "didChange":
+    case "textDocument/didChange":
       const uri = msg.params.textDocument.uri;
       if (!uri.startsWith(FILE_URI_PREFIX)) {
         log("Non-file URIs not supported: '" + uri + "'");
@@ -268,13 +281,13 @@ async function handle(msg) {
       const sourceContent = lastContentChange.text;
 
       await store(timestamp, "buffer", sourceFilename, sourceContent);
-      await uploadIfNecessary();
+      await upload(timestamp);
 
       break;
 
-    case "didOpen": // No new info
-    case "didClose": // No new info
-    case "didSave": // Handled by file system watcher
+    case "textDocument/didOpen": // No new info
+    case "textDocument/didClose": // No new info
+    case "textDocument/didSave": // Handled by file system watcher
       break;
 
     default:
@@ -285,21 +298,28 @@ async function handle(msg) {
 ////////////////////////////////////////////////////////////////////////////////
 // Uploader
 
-function tryUpdate() {
+// NOTE: the "server" can just be a static page on github pages
+// ... although it's actually probably fine to just use DigitalOcean
+async function tryUpdate() {
   // TODO
   // make http request to berkeley server for latest version string
   // if it's different than VERSION, make another request for the latest file
   // download that file, replace current file with it
   //   -> the program will be updated for the next run
+  //   also notify user
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Main
 
-try {
-  tryUpdate();
-  listen(handle);
-} catch (err) {
-  log("[ERROR] " + err.message);
-  throw err; // TODO display notification to user to contact admin
+process.on('uncaughtException', function (error) {
+  log("[ERROR] " + error.stack.toString());
+});
+
+async function main() {
+  log("--- Starting new Edit Mirror session ---");
+  await tryUpdate();
+  await listen(handle);
 }
+
+main();

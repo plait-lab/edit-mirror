@@ -1,5 +1,9 @@
+Old:
 - have Amazon S3 instance for storing gzipped logs
 - have a node js express server on heroku
   - endpoints:
       - give S3 temporary upload credential
       - auto updater
+
+New:
+- Just have a normal server on DigitalOcean
