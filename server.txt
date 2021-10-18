@@ -7,3 +7,4 @@ Old:
 
 New:
 - Just have a normal server on DigitalOcean
+    - Note: Can actually run on Raspberry Pi!
