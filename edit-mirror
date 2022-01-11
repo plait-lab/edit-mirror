@@ -26,10 +26,15 @@ const UPLOAD_PATH = "upload";
 const UPLOAD_THRESHOLD_HOURS = 6;
 
 const PLUGIN_DIR = "___edit-mirror___";
+
 const LOGS_DIR = PLUGIN_DIR + "/logs";
-const FILE_LOG_DIR = LOGS_DIR + "/files";
+const CURRENT_LOGS_DIR = LOGS_DIR + "/current";
+const CURRENT_FILE_LOG_DIR = CURRENT_LOGS_DIR + "/files";
+const PENDING_UPLOAD_DIR = LOGS_DIR + "/pending-upload";
+
 const ID_PATH = PLUGIN_DIR + "/id.txt";
-const LAST_UPLOAD_ATTEMPT_PATH = PLUGIN_DIR + "/last_upload_attempt.txt";
+const LAST_UPLOAD_ATTEMPT_PATH = PLUGIN_DIR + "/last-upload-attempt.txt";
+const DEMOGRAPHICS_PATH = PLUGIN_DIR + "/demographics.txt";
 
 const WATCHED_EXTENSION = ".elm";
 const WATCHED_FILES = ["**/*.elm", "elm.json"];
@@ -44,6 +49,26 @@ let ID = null;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers
+
+// File helpers
+
+// Source: https://stackoverflow.com/a/22185855
+function copyRecursiveSync(src, dest) {
+  const exists = fs.existsSync(src);
+  const stats = exists && fs.statSync(src);
+  const isDirectory = exists && stats.isDirectory();
+  if (isDirectory) {
+    fs.mkdirSync(dest);
+    fs.readdirSync(src).forEach(function(childItemName) {
+      copyRecursiveSync(
+				path.join(src, childItemName),
+        path.join(dest, childItemName)
+			);
+    });
+  } else {
+    fs.copyFileSync(src, dest);
+  }
+}
 
 // Time helpers
 
@@ -101,7 +126,7 @@ function sendResponse(id, result) {
 
 // TODO we might want to buffer this?
 async function store(timestamp, kind, sourcePath, sourceContent) {
-  const dir = FILE_LOG_DIR + "/" + sourcePath;
+  const dir = CURRENT_FILE_LOG_DIR + "/" + sourcePath;
   const filename = dir + "/" + timestamp + "-" + kind;
 
   await fsp.mkdir(dir, { recursive: true });
@@ -140,6 +165,19 @@ function watchFiles() {
 // 2. Wait for ACK response from DigitalOcean server
 // 3. Delete files locally
 function sendUploadRequest() {
+  const timestamp = new Date().getTime();
+  const pendingUpload = PENDING_UPLOAD_DIR + "/" + timestamp;
+
+  fs.renameSync(CURRENT_LOGS_DIR, pendingUpload);
+  fs.mkdirSync(CURRENT_LOGS_DIR, { recursive: true });
+
+  fs.copyFileSync(ID_PATH,
+    pendingUpload + "/id.txt");
+  fs.copyFileSync(LAST_UPLOAD_ATTEMPT_PATH,
+    pendingUpload + "/last-upload-attempt.txt");
+  fs.copyFileSync(DEMOGRAPHICS_PATH,
+    pendingUpload + "/demographics.txt");
+
   const form = new FormData();
 
   form.append("client_version", VERSION);
@@ -149,7 +187,7 @@ function sendUploadRequest() {
     tar.create(
       { gzip: true
       },
-      [ PLUGIN_DIR ] // TODO be more precise?
+      [ pendingUpload ]
     );
   form.append("data_tarball", zippedStream);
 
@@ -161,11 +199,7 @@ function sendUploadRequest() {
   }, res => {
     switch (res.statusCode) {
       case 200: // OK
-        // This needs to be synchronous/atomic because it has to happen
-        // before processing any further events
-        // TODO wait, what about any changes that happened since uploading?
-        fs.rmdirSync(LOG_DIR, { recursive: true, force: true });
-        fs.mkdirSync(LOG_DIR, { recursive: true });
+        fs.rmSync(pendingUpload, { recursive: true, force: true });
         res.resume();
         break;
 

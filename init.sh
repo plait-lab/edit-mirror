@@ -9,17 +9,6 @@
 #      elm
 # put the elm.sh in PATH correctly somehow
 
-# directory structure
-#
-# ___edit-mirror___
-#   logs/
-#     files/
-#     compilations/
-#   id.txt
-#   demographics.txt
-#   .gitignore
-#   last_upload_attempt.txt
-
 # TODO consent
 
 read -e -p "What is your Edit Mirror ID? " id
@@ -29,11 +18,13 @@ em=___edit-mirror___
 
 mkdir $em
 mkdir $em/logs
-mkdir $em/logs/files
-mkdir $em/logs/compilations
+mkdir $em/logs/current
+mkdir $em/logs/current/files
+mkdir $em/logs/current/compilations
+mkdir $em/logs/pending-upload
 echo $id > $em/id.txt
 echo "Experience: $exp" > $em/demographics.txt
 echo "/*" > $em/.gitignore
-echo "0" > $em/last_upload_attempt.txt
+echo "0" > $em/last-upload-attempt.txt
 
 echo "Edit Mirror setup has completed."
