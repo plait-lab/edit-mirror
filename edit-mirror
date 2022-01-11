@@ -111,6 +111,8 @@ async function store(timestamp, kind, sourcePath, sourceContent) {
 ////////////////////////////////////////////////////////////////////////////////
 // File watcher
 
+// TODO: ignore elm-stuff
+
 function watchHandler(kind) {
   return (async path => {
     // Handles https://github.com/paulmillr/chokidar/issues/544
@@ -147,7 +149,7 @@ function sendUploadRequest() {
     tar.create(
       { gzip: true
       },
-      [ PLUGIN_DIR ]
+      [ PLUGIN_DIR ] // TODO be more precise?
     );
   form.append("data_tarball", zippedStream);
 
@@ -161,6 +163,7 @@ function sendUploadRequest() {
       case 200: // OK
         // This needs to be synchronous/atomic because it has to happen
         // before processing any further events
+        // TODO wait, what about any changes that happened since uploading?
         fs.rmdirSync(LOG_DIR, { recursive: true, force: true });
         fs.mkdirSync(LOG_DIR, { recursive: true });
         res.resume();
