@@ -38,6 +38,7 @@ const DEMOGRAPHICS_PATH = PLUGIN_DIR + "/demographics.txt";
 
 const WATCHED_EXTENSION = ".elm";
 const WATCHED_FILES = ["**/*.elm", "elm.json"];
+const IGNORED_PATHS = [PLUGIN_DIR + "/**", "elm-stuff/**"];
 
 const FILE_URI_PREFIX = "file://";
 
@@ -111,7 +112,9 @@ function dlog(text) {
 // JSON RPC helpers
 
 function sendMessage(content) {
-  process.stdout.write("Content-Length: " + content.length + "\r\n\r\n" + content);
+  process.stdout.write(
+    "Content-Length: " + content.length + "\r\n\r\n" + content
+  );
 }
 
 function sendResponse(id, result) {
@@ -148,7 +151,7 @@ function sendPromptRequest(message, options) {
 
 let consentToUploadId = null;
 
-function requestUploadConsent() {
+function requestUpload() {
   consentToUploadId = sendPromptRequest(
     "Do you consent to uploading all edit history since your last upload?",
     ["Yes", "No"]
@@ -157,6 +160,17 @@ function requestUploadConsent() {
 
 function indicatesConsent(option) {
   return option === "Yes";
+}
+
+async function requestUploadIfNecessary(currentTimestamp) {
+  const lastRequested = parseInt(await fsp.readFile(LAST_UPLOAD_REQUEST_PATH));
+  const hoursElapsed = millisToHours(currentTimestamp - lastRequested);
+  dlog("Hours elapsed: " + hoursElapsed);
+  if (hoursElapsed > UPLOAD_REQUEST_THRESHOLD_HOURS) {
+    log("Requesting upload after " + hoursElapsed.toFixed(2) + " hours");
+    await fsp.writeFile(LAST_UPLOAD_REQUEST_PATH, currentTimestamp.toString());
+    requestUploadConsent();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -186,9 +200,8 @@ function watchHandler(kind) {
 }
 
 function watchFiles() {
-  chokidar.watch(WATCHED_FILES, {
-    ignored: [PLUGIN_DIR + "/**", "elm-stuff/**"]
-  }).on("add", watchHandler("add"))
+  chokidar.watch(WATCHED_FILES, { ignored: IGNORED_PATHS })
+    .on("add", watchHandler("add"))
     .on("change", watchHandler("change"))
     .on("unlink", watchHandler("unlink"));
 }
@@ -196,7 +209,7 @@ function watchFiles() {
 ////////////////////////////////////////////////////////////////////////////////
 // Uploader
 
-function sendUploadRequest() {
+function upload() {
   const timestamp = new Date().getTime();
   const pendingUpload = PENDING_UPLOAD_DIR + "/" + timestamp;
 
@@ -250,17 +263,6 @@ function sendUploadRequest() {
   });
 
   form.pipe(req);
-}
-
-async function upload(currentTimestamp) {
-  const lastRequested = parseInt(await fsp.readFile(LAST_UPLOAD_REQUEST_PATH));
-  const hoursElapsed = millisToHours(currentTimestamp - lastRequested);
-  dlog("Hours elapsed: " + hoursElapsed);
-  if (hoursElapsed > UPLOAD_REQUEST_THRESHOLD_HOURS) {
-    log("Requesting upload after " + hoursElapsed.toFixed(2) + " hours");
-    await fsp.writeFile(LAST_UPLOAD_REQUEST_PATH, currentTimestamp.toString());
-    requestUploadConsent();
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -345,7 +347,7 @@ async function handle(msg) {
       const sourceContent = lastContentChange.text;
 
       await store(timestamp, "buffer", sourceFilename, sourceContent);
-      await upload(timestamp);
+      await requestUploadIfNecessary(timestamp);
 
       break;
 
@@ -362,7 +364,7 @@ async function handle(msg) {
           && msg.params.result
           && indicatesConsent(msg.params.result.title)
       ) {
-        sendUploadRequest();
+        upload();
       }
       break;
 
