@@ -361,12 +361,10 @@ async function handle(msg) {
       break;
 
     case "shutdown":
-      dlog("shutdown");
       sendResponse(msg.id, null);
       break;
 
     case "exit":
-      dlog("exit");
       process.exit(0);
       break;
 
@@ -389,15 +387,13 @@ async function handle(msg) {
 ////////////////////////////////////////////////////////////////////////////////
 // Uploader
 
-// NOTE: the "server" can just be a static page on github pages
-// ... although it's actually probably fine to just use DigitalOcean
 async function tryUpdate() {
   // TODO
   // make http request to berkeley server for latest version string
   // if it's different than VERSION, make another request for the latest file
   // download that file, replace current file with it
   //   -> the program will be updated for the next run
-  //   also notify user
+  // also notify user?
 }
 
 ////////////////////////////////////////////////////////////////////////////////
