@@ -169,7 +169,7 @@ async function requestUploadIfNecessary(currentTimestamp) {
   if (hoursElapsed > UPLOAD_REQUEST_THRESHOLD_HOURS) {
     log("Requesting upload after " + hoursElapsed.toFixed(2) + " hours");
     await fsp.writeFile(LAST_UPLOAD_REQUEST_PATH, currentTimestamp.toString());
-    requestUploadConsent();
+    requestUpload();
   }
 }
 
