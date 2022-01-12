@@ -18,12 +18,12 @@ const read = util.promisify(fs.read);
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
 
-const VERSION = "1.0.0";
+const VERSION = "0.1.0";
 
 const SERVER_HOSTNAME = "localhost:8080";
 const UPLOAD_PATH = "upload";
 
-const UPLOAD_THRESHOLD_HOURS = 6;
+const UPLOAD_REQUEST_THRESHOLD_HOURS = 24;
 
 const PLUGIN_DIR = "___edit-mirror___";
 
@@ -33,7 +33,7 @@ const CURRENT_FILE_LOG_DIR = CURRENT_LOGS_DIR + "/files";
 const PENDING_UPLOAD_DIR = LOGS_DIR + "/pending-upload";
 
 const ID_PATH = PLUGIN_DIR + "/id.txt";
-const LAST_UPLOAD_ATTEMPT_PATH = PLUGIN_DIR + "/last-upload-attempt.txt";
+const LAST_UPLOAD_REQUEST_PATH = PLUGIN_DIR + "/last-upload-request.txt";
 const DEMOGRAPHICS_PATH = PLUGIN_DIR + "/demographics.txt";
 
 const WATCHED_EXTENSION = ".elm";
@@ -121,10 +121,46 @@ function sendResponse(id, result) {
   }));
 }
 
+let globalIdCounter = 1;
+function sendRequest(method, params) {
+  const id = globalIdCounter;
+  sendMessage(JSON.stringify({
+    id: id,
+    method: method,
+    params: params,
+    jsonrpc: "2.0"
+  }));
+  globalIdCounter += 1;
+  return id;
+}
+
+function sendPromptRequest(message, options) {
+  return sendRequest("window/showMessageRequest", {
+    type: 3, // Info
+    message: message,
+    actions: options.map(opt => { title: opt });
+  });
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// User consent
+
+let consentToUploadId = null;
+
+function requestUploadConsent() {
+  consentToUploadId = sendPromptRequest(
+    "Do you consent to uploading all edit history since your last upload?",
+    ["Yes", "No"]
+  );
+}
+
+function indicatesConsent(option) {
+  return option === "Yes";
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Storage manager
 
-// TODO we might want to buffer this?
 async function store(timestamp, kind, sourcePath, sourceContent) {
   const dir = CURRENT_FILE_LOG_DIR + "/" + sourcePath;
   const filename = dir + "/" + timestamp + "-" + kind;
@@ -135,8 +171,6 @@ async function store(timestamp, kind, sourcePath, sourceContent) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // File watcher
-
-// TODO: ignore elm-stuff
 
 function watchHandler(kind) {
   return (async path => {
@@ -151,8 +185,9 @@ function watchHandler(kind) {
 }
 
 function watchFiles() {
-  chokidar.watch(WATCHED_FILES, { ignored: PLUGIN_DIR + "/**" })
-    .on("add", watchHandler("add"))
+  chokidar.watch(WATCHED_FILES, {
+    ignored: [PLUGIN_DIR + "/**", "elm-stuff/**"]
+  }).on("add", watchHandler("add"))
     .on("change", watchHandler("change"))
     .on("unlink", watchHandler("unlink"));
 }
@@ -160,10 +195,6 @@ function watchFiles() {
 ////////////////////////////////////////////////////////////////////////////////
 // Uploader
 
-// 0. tar and gzip log folder
-// 1. Send form data request to DigitalOcean server with tarred file stream
-// 2. Wait for ACK response from DigitalOcean server
-// 3. Delete files locally
 function sendUploadRequest() {
   const timestamp = new Date().getTime();
   const pendingUpload = PENDING_UPLOAD_DIR + "/" + timestamp;
@@ -173,8 +204,6 @@ function sendUploadRequest() {
 
   fs.copyFileSync(ID_PATH,
     pendingUpload + "/id.txt");
-  fs.copyFileSync(LAST_UPLOAD_ATTEMPT_PATH,
-    pendingUpload + "/last-upload-attempt.txt");
   fs.copyFileSync(DEMOGRAPHICS_PATH,
     pendingUpload + "/demographics.txt");
 
@@ -203,7 +232,7 @@ function sendUploadRequest() {
         res.resume();
         break;
 
-      default: // Error, TODO alert to user?
+      default: // Error
         res.setEncoding("utf8");
         let rawData = "";
         res.on("data", chunk => { rawData += chunk; });
@@ -223,17 +252,13 @@ function sendUploadRequest() {
 }
 
 async function upload(currentTimestamp) {
-  const lastUploaded = parseInt(await fsp.readFile(LAST_UPLOAD_ATTEMPT_PATH));
-  const hoursElapsed = millisToHours(currentTimestamp - lastUploaded);
+  const lastRequested = parseInt(await fsp.readFile(LAST_UPLOAD_REQUEST_PATH));
+  const hoursElapsed = millisToHours(currentTimestamp - lastRequested);
   dlog("Hours elapsed: " + hoursElapsed);
-  if (hoursElapsed > UPLOAD_THRESHOLD_HOURS) {
-    log("Uploading after " + hoursElapsed.toFixed(2) + " hours");
-    // TODO prompt for consent
-    const consent = true;
-    if (consent) {
-      sendUploadRequest();
-    }
-    await fsp.writeFile(LAST_UPLOAD_ATTEMPT_PATH, currentTimestamp.toString());
+  if (hoursElapsed > UPLOAD_REQUEST_THRESHOLD_HOURS) {
+    log("Requesting upload after " + hoursElapsed.toFixed(2) + " hours");
+    await fsp.writeFile(LAST_UPLOAD_REQUST_PATH, currentTimestamp.toString());
+    requestUpload();
   }
 }
 
@@ -278,10 +303,11 @@ async function handle(msg) {
 
 			watchFiles();
 
-			sendResponse(
-				msg.id,
-				{ capabilities: { textDocumentSync: 1 } }
-			);
+			sendResponse(msg.id, {
+        capabilities: {
+          textDocumentSync: 1
+        }
+      });
 
       log("Initialized!");
 
@@ -325,6 +351,18 @@ async function handle(msg) {
     case "textDocument/didOpen": // No new info
     case "textDocument/didClose": // No new info
     case "textDocument/didSave": // Handled by file system watcher
+      break;
+
+    case "window/showMessageRequest":
+      dlog("Reached response of showMessageRequest!");
+      if (
+        consentToUploadId !== null
+          && msg.id === consentToUploadId
+          && msg.params.result
+          && indicatesConsent(msg.params.result.title)
+      ) {
+        sendUploadRequest();
+      }
       break;
 
     default:

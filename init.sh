@@ -25,6 +25,6 @@ mkdir $em/logs/pending-upload
 echo $id > $em/id.txt
 echo "Experience: $exp" > $em/demographics.txt
 echo "/*" > $em/.gitignore
-echo "0" > $em/last-upload-attempt.txt
+echo "0" > $em/last-upload-request.txt
 
 echo "Edit Mirror setup has completed."
