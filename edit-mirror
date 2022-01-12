@@ -139,7 +139,7 @@ function sendPromptRequest(message, options) {
   return sendRequest("window/showMessageRequest", {
     type: 3, // Info
     message: message,
-    actions: options.map(opt => { title: opt })
+    actions: options.map(opt => ({ title: opt }))
   });
 }
 
@@ -308,11 +308,6 @@ async function handle(msg) {
         capabilities: {
           textDocumentSync: 1
         }
-      });
-
-      sendRequest("window/logMessage", {
-        type: 3, // Info
-        message: "Starting!!!"
       });
 
       log("Initialized!");
