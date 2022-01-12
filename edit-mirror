@@ -210,6 +210,7 @@ function watchFiles() {
 // Uploader
 
 function upload() {
+  dlog("Uploading!");
   const timestamp = new Date().getTime();
   const pendingUpload = PENDING_UPLOAD_DIR + "/" + timestamp;
 
@@ -292,6 +293,8 @@ async function listen(handler) {
 async function handle(msg) {
   const timestamp = new Date().getTime();
 
+  // Client requests
+
   switch (msg.method) {
     case "initialize":
       log("Starting initialization...");
@@ -356,18 +359,6 @@ async function handle(msg) {
     case "textDocument/didSave": // Handled by file system watcher
       break;
 
-    case "window/showMessageRequest":
-      dlog("Reached response of showMessageRequest!");
-      if (
-        consentToUploadId !== null
-          && msg.id === consentToUploadId
-          && msg.params.result
-          && indicatesConsent(msg.params.result.title)
-      ) {
-        upload();
-      }
-      break;
-
     case "shutdown":
       dlog("shutdown");
       sendResponse(msg.id, null);
@@ -380,6 +371,17 @@ async function handle(msg) {
 
     default:
       break;
+  }
+
+  // Client responses
+
+  if (
+    consentToUploadId !== null
+      && msg.id === consentToUploadId
+      && msg.result
+      && indicatesConsent(msg.result.title)
+  ) {
+    upload();
   }
 }
 
