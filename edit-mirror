@@ -95,12 +95,13 @@ async function getLine() {
   return line.trim();
 }
 
+const logStream = fs.createWriteStream(
+  "/Users/jlubin/Desktop/log.txt", { flags: "a"}
+);
+
 function log(text) {
   const timestamp = new Date().getTime();
-  fs.appendFileSync(
-    "/Users/jlubin/Desktop/log.txt",
-    "[" + timestamp + "] " + text + "\n"
-  );
+  logStream.write("[" + timestamp + "] " + text + "\n");
 }
 
 function dlog(text) {
@@ -110,7 +111,7 @@ function dlog(text) {
 // JSON RPC helpers
 
 function sendMessage(content) {
-  console.log("Content-Length: " + content.length + "\r\n\r\n" + content);
+  process.stdout.write("Content-Length: " + content.length + "\r\n\r\n" + content);
 }
 
 function sendResponse(id, result) {
@@ -372,8 +373,7 @@ async function handle(msg) {
 
     case "shutdown":
       dlog("shutdown");
-      dlog(JSON.stringify(msg));
-			sendResponse(msg.id, null);
+      sendResponse(msg.id, null);
       break;
 
     case "exit":
