@@ -210,7 +210,6 @@ function watchFiles() {
 // Uploader
 
 function upload() {
-  dlog("Uploading!");
   const timestamp = new Date().getTime();
   const pendingUpload = PENDING_UPLOAD_DIR + "/" + timestamp;
 
@@ -316,6 +315,8 @@ async function handle(msg) {
       });
 
       log("Initialized!");
+
+      await requestUploadIfNecessary(timestamp);
 
       break;
 
