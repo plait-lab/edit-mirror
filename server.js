@@ -6,7 +6,7 @@ const formidable = require("formidable");
 const PORT = 4040;
 const DATA_DIR = "data";
 
-function store(timestamp, clientId, dataTarballTempPath, callback) {
+function store(serverTimestamp, clientId, dataTarballTempPath, callback) {
   fs.readdir(DATA_DIR, (err, clientDirs) => {
     if (err) {
       return callback({ code: 500, val: err });
@@ -17,7 +17,7 @@ function store(timestamp, clientId, dataTarballTempPath, callback) {
     const uniqueSuffix = path.basename(dataTarballTempPath);
     fs.rename(
       dataTarballTempPath,
-      `${DATA_DIR}/${clientId}/${timestamp}-${uniqueSuffix}.tar.gz`,
+      `${DATA_DIR}/${clientId}/${serverTimestamp}-${uniqueSuffix}.tar.gz`,
       err => {
         if (err) {
           return callback({ code: 500, val: err });
@@ -31,7 +31,7 @@ function store(timestamp, clientId, dataTarballTempPath, callback) {
 function handlePost(req, res) {
   switch (req.url) {
     case "/upload":
-      const timestamp = new Date().getTime();
+      const serverTimestamp = new Date().getTime();
 
       const form = formidable()
 
@@ -54,6 +54,12 @@ function handlePost(req, res) {
           return;
         }
 
+        if (!("client_timestamp" in fields)) {
+          res.writeHead(400, { "Content-Type": "text/plain" });
+          res.end("Missing field 'client_timestamp'");
+          return;
+        }
+
         if (!("data_tarball" in files)) {
           res.writeHead(400, { "Content-Type": "text/plain" });
           res.end("Missing file 'data_tarball'");
@@ -64,7 +70,7 @@ function handlePost(req, res) {
         // const clientVersion = fields["client_version"];
         const dataTarballPath = files["data_tarball"].path;
 
-        store(timestamp, clientId, dataTarballPath, err => {
+        store(serverTimestamp, clientId, dataTarballPath, err => {
           if (err) {
             res.writeHead(err.code);
             res.end(String(err.val));
