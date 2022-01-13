@@ -1,19 +1,31 @@
+const fs = require("fs");
+const path = require("path");
 const http = require("http");
 const formidable = require("formidable");
 
-function store(
-  timestamp,
-  clientId,
-  clientVersion,
-  dataTarballTempPath,
-  dataTarballSize,
-  callback
-) {
-  // TODO
-  // - check if client id is allowlisted
-  // - check to make sure timestamp is greater than all previous timestamp
-  // - TODO check md5 somehow?
-  // - rename the file at tempPath to clientId/timestamp.tar.gz
+const PORT = 4040;
+const DATA_DIR = "data";
+
+function store(timestamp, clientId, dataTarballTempPath, callback) {
+  fs.readdir(DATA_DIR, (err, clientDirs) => {
+    if (err) {
+      return callback({ code: 500, val: err });
+    }
+    if (!clientDirs.includes(clientId)) {
+      return callback({ code: 400, val: `Forbidden client id '${clientId}'`});
+    }
+    const uniqueSuffix = path.basename(dataTarballTempPath);
+    fs.rename(
+      dataTarballTempPath,
+      `${DATA_DIR}/${clientId}/${timestamp}-${uniqueSuffix}.tar.gz`,
+      err => {
+        if (err) {
+          return callback({ code: 500, val: err });
+        }
+        return callback(null);
+      }
+    )
+  });
 }
 
 function handlePost(req, res) {
@@ -21,7 +33,7 @@ function handlePost(req, res) {
     case "/upload":
       const timestamp = new Date().getTime();
 
-      const form = new formidable.IncomingForm()
+      const form = formidable()
 
       form.parse(req, (err, fields, files) => {
         if (err) {
@@ -42,32 +54,25 @@ function handlePost(req, res) {
           return;
         }
 
-        if (!("data_tarball" in fields)) {
+        if (!("data_tarball" in files)) {
           res.writeHead(400, { "Content-Type": "text/plain" });
           res.end("Missing file 'data_tarball'");
           return;
         }
 
         const clientId = fields["client_id"];
-        const clientVersion = fields["client_version"];
-        const dataTarballPath = files["data_tarball"].
+        // const clientVersion = fields["client_version"];
+        const dataTarballPath = files["data_tarball"].path;
 
-        store(
-          timestamp,
-          fields["client_id"],
-          fields["client_version"],
-          files["data_tarball"].path,
-          files["data_tarball"].size,
-          storeErr => {
-            if (storeErr) {
-              res.writeHead(500);
-              res.end(String(storeErr));
-            } else {
-              res.writeHead(200);
-              res.end();
-            }
+        store(timestamp, clientId, dataTarballPath, err => {
+          if (err) {
+            res.writeHead(err.code);
+            res.end(String(err.val));
+          } else {
+            res.writeHead(200);
+            res.end();
           }
-        );
+        });
       });
 
       break;
@@ -99,6 +104,7 @@ function handleGet(req, res) {
 }
 
 function listener(req, res) {
+  console.log(`Received request: ${req.method} ${req.url}`);
   switch (req.method) {
     case "POST":
       handlePost(req, res);
@@ -116,4 +122,11 @@ function listener(req, res) {
 }
 
 const server = http.createServer(listener);
-server.listen(8080);
+
+server.on('clientError', (err, socket) => {
+  console.log(err);
+  socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+});
+
+server.listen(PORT);
+console.log(`Listening on port ${PORT}...`);
