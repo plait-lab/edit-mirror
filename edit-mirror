@@ -20,10 +20,11 @@ const read = util.promisify(fs.read);
 
 const VERSION = "0.1.0";
 
-const SERVER_HOSTNAME = "localhost:8080";
-const UPLOAD_PATH = "upload";
+const SERVER_HOSTNAME = "localhost";
+const SERVER_PORT = 4040;
+const SERVER_UPLOAD_PATH = "/upload";
 
-const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.01;
+const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.002;
 
 const PLUGIN_DIR = "___edit-mirror___";
 
@@ -211,58 +212,68 @@ function watchFiles() {
 
 function upload() {
   const timestamp = new Date().getTime();
-  const pendingUpload = PENDING_UPLOAD_DIR + "/" + timestamp;
+  const pendingUploadPath = PENDING_UPLOAD_DIR + "/" + timestamp;
+  const pendingUploadArchivePath = pendingUploadPath + ".tar.gz";
 
-  fs.renameSync(CURRENT_LOGS_DIR, pendingUpload);
+  fs.renameSync(CURRENT_LOGS_DIR, pendingUploadPath);
   fs.mkdirSync(CURRENT_LOGS_DIR, { recursive: true });
 
-  fs.copyFileSync(ID_PATH,
-    pendingUpload + "/id.txt");
-  fs.copyFileSync(DEMOGRAPHICS_PATH,
-    pendingUpload + "/demographics.txt");
+  fs.copyFileSync(ID_PATH, pendingUploadPath + "/id.txt");
+  fs.copyFileSync(DEMOGRAPHICS_PATH, pendingUploadPath + "/demographics.txt");
 
   const form = new FormData();
 
   form.append("client_version", VERSION);
   form.append("client_id", ID);
+  form.append("client_timestamp", timestamp);
 
-  const zippedStream =
-    tar.create(
-      { gzip: true
-      },
-      [ pendingUpload ]
-    );
-  form.append("data_tarball", zippedStream);
+  tar.create(
+    { gzip: true
+    , cwd: pendingUploadPath
+    , file: pendingUploadArchivePath
+    },
+    [ "." ],
+    _ => {
+      form.append("data_tarball",
+        fs.createReadStream(pendingUploadArchivePath));
 
-  const req = http.request({
-    method: "POST",
-    host: SERVER_HOSTNAME,
-    path: UPLOAD_PATH,
-    headers: form.getHeaders()
-  }, res => {
-    switch (res.statusCode) {
-      case 200: // OK
-        fs.rmSync(pendingUpload, { recursive: true, force: true });
-        res.resume();
-        break;
+      form.submit({
+        method: "POST",
+        host: SERVER_HOSTNAME,
+        port: SERVER_PORT,
+        path: SERVER_UPLOAD_PATH,
+      }, (err, res) => {
+        if (err) {
+          log("Upload failed: " + err);
+          // TODO need to move log files back here
+        } else {
+          switch (res.statusCode) {
+            case 200: // OK
+              dlog("Server accepted upload.");
+              res.resume();
+              break;
 
-      default: // Error
-        res.setEncoding("utf8");
-        let rawData = "";
-        res.on("data", chunk => { rawData += chunk; });
-        res.on("end", () => {
-          log(
-            "Server responded with status code "
-              + res.statusCode
-              + ": "
-              + rawData
-          );
-        });
-        break;
+            default: // Error
+              res.setEncoding("utf8");
+              let rawData = "";
+              res.on("data", chunk => { rawData += chunk; });
+              res.on("end", () => {
+                log(
+                  "Server responded with status code "
+                    + res.statusCode
+                    + ": "
+                    + rawData
+                );
+              });
+              break;
+          }
+        }
+
+        fs.rmSync(pendingUploadPath, { recursive: true, force: true });
+        fs.rmSync(pendingUploadArchivePath);
+      });
     }
-  });
-
-  form.pipe(req);
+  );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -304,7 +315,7 @@ async function handle(msg) {
       }
       ROOT_PATH = rootUri.substring(FILE_URI_PREFIX.length);
 
-      ID = await fsp.readFile(ID_PATH);
+      ID = (await fsp.readFile(ID_PATH)).toString("utf8").trim();
 
 			watchFiles();
 
