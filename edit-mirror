@@ -246,6 +246,7 @@ function upload() {
         if (err) {
           log("Upload failed: " + err);
           // TODO need to move log files back here
+          // honestly should probably flatten timestamped file storage format
         } else {
           switch (res.statusCode) {
             case 200: // OK
