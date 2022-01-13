@@ -6,13 +6,12 @@ elm "$@"
 code=$?
 
 if [ "$1" == "make" ]; then
-  cl="___edit-mirror___/logs/compilations"
-  mkdir -p $cl
+  logdir="___edit-mirror___/log"
 
   elm "$@" --report=json \
-    1> $cl/$timestamp-stdout \
-    2> $cl/$timestamp-stderr
-  echo $? > $cl/$timestamp-exitcode
+    1> $logdir/$timestamp-compile-stdout \
+    2> $logdir/$timestamp-compile-stderr
+  echo $? > $logdir/$timestamp-compile-exitcode
 fi
 
 exit $code

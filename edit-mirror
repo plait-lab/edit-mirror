@@ -28,17 +28,20 @@ const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.002;
 
 const PLUGIN_DIR = "___edit-mirror___";
 
-const LOGS_DIR = PLUGIN_DIR + "/logs";
-const CURRENT_LOGS_DIR = LOGS_DIR + "/current";
-const CURRENT_FILE_LOG_DIR = CURRENT_LOGS_DIR + "/files";
-const PENDING_UPLOAD_DIR = LOGS_DIR + "/pending-upload";
+const LOG_DIR = PLUGIN_DIR + "/log";
+const PENDING_UPLOAD_DIR = PLUGIN_DIR + "/pending-upload";
+const INFO_DIR = PLUGIN_DIR + "/info";
 
-const ID_PATH = PLUGIN_DIR + "/id.txt";
-const LAST_UPLOAD_REQUEST_PATH = PLUGIN_DIR + "/last-upload-request.txt";
-const DEMOGRAPHICS_PATH = PLUGIN_DIR + "/demographics.txt";
+const PENDING_UPLOAD_ARCHIVE_PATH = PENDING_UPLOAD_DIR + ".tar.gz"
+const PENDING_UPLOAD_LOG_DIR = PENDING_UPLOAD_DIR + "/log"
+const PENDING_UPLOAD_INFO_DIR = PENDING_UPLOAD_DIR + "/info"
+
+const ID_PATH = INFO_DIR + "/id.txt";
+const LAST_UPLOAD_REQUEST_PATH = INFO_DIR + "/last-upload-request.txt";
+const DEMOGRAPHICS_PATH = INFO_DIR + "/demographics.txt";
 
 const WATCHED_EXTENSION = ".elm";
-const WATCHED_FILES = ["**/*.elm", "elm.json"];
+const WATCHED_PATHS = ["**/*.elm", "elm.json"];
 const IGNORED_PATHS = [PLUGIN_DIR + "/**", "elm-stuff/**"];
 
 const FILE_URI_PREFIX = "file://";
@@ -54,21 +57,15 @@ let ID = null;
 
 // File helpers
 
-// Source: https://stackoverflow.com/a/22185855
-function copyRecursiveSync(src, dest) {
-  const exists = fs.existsSync(src);
-  const stats = exists && fs.statSync(src);
-  const isDirectory = exists && stats.isDirectory();
-  if (isDirectory) {
-    fs.mkdirSync(dest);
-    fs.readdirSync(src).forEach(function(childItemName) {
-      copyRecursiveSync(
-				path.join(src, childItemName),
-        path.join(dest, childItemName)
-			);
-    });
-  } else {
-    fs.copyFileSync(src, dest);
+function copyAllVisibleSync(sourceDir, targetDir) {
+  for (const file of fs.readdirSync(sourceDir)) {
+    fs.copyFileSync(`${sourceDir}/${file}`, `${targetDir}/${file}`);
+  }
+}
+
+function moveAllVisibleSync(sourceDir, targetDir) {
+  for (const file of fs.readdirSync(sourceDir)) {
+    fs.renameSync(`${sourceDir}/${file}`, `${targetDir}/${file}`);
   }
 }
 
@@ -98,7 +95,7 @@ async function getLine() {
 }
 
 const logStream = fs.createWriteStream(
-  "/Users/jlubin/Desktop/log.txt", { flags: "a"}
+  "/Users/jlubin/Desktop/log.txt", { flags: "a" }
 );
 
 function log(text) {
@@ -139,6 +136,8 @@ function sendRequest(method, params) {
   return id;
 }
 
+// LSP helpers
+
 function sendPromptRequest(message, options) {
   return sendRequest("window/showMessageRequest", {
     type: 3, // Info
@@ -178,10 +177,9 @@ async function requestUploadIfNecessary(currentTimestamp) {
 // Storage manager
 
 async function store(timestamp, kind, sourcePath, sourceContent) {
-  const dir = CURRENT_FILE_LOG_DIR + "/" + sourcePath;
-  const filename = dir + "/" + timestamp + "-" + kind;
+  const sourcePathEncoding = sourceContent.replaceAll("/", "$");
+  const filename = `${LOG_DIR}/${timestamp}-${kind}-${sourcePathEncoding}`
 
-  await fsp.mkdir(dir, { recursive: true });
   await fsp.writeFile(filename, sourceContent);
 }
 
@@ -201,7 +199,7 @@ function watchHandler(kind) {
 }
 
 function watchFiles() {
-  chokidar.watch(WATCHED_FILES, { ignored: IGNORED_PATHS })
+  chokidar.watch(WATCHED_PATHS, { ignored: IGNORED_PATHS })
     .on("add", watchHandler("add"))
     .on("change", watchHandler("change"))
     .on("unlink", watchHandler("unlink"));
@@ -212,14 +210,19 @@ function watchFiles() {
 
 function upload() {
   const timestamp = new Date().getTime();
-  const pendingUploadPath = PENDING_UPLOAD_DIR + "/" + timestamp;
-  const pendingUploadArchivePath = pendingUploadPath + ".tar.gz";
 
-  fs.renameSync(CURRENT_LOGS_DIR, pendingUploadPath);
-  fs.mkdirSync(CURRENT_LOGS_DIR, { recursive: true });
+  fs.mkdirSync(PENDING_UPLOAD_DIR);
 
-  fs.copyFileSync(ID_PATH, pendingUploadPath + "/id.txt");
-  fs.copyFileSync(DEMOGRAPHICS_PATH, pendingUploadPath + "/demographics.txt");
+  fs.renameSync(LOG_DIR, PENDING_UPLOAD_LOG_DIR);
+  fs.mkdirSync(LOG_DIR);
+
+  fs.mkdirSync(PENDING_UPLOAD_INFO_DIR);
+  fs.readdirSync(INFO_DIR).forEach(file => {
+    fs.copyFileSync(
+      `${INFO_DIR}/${file}`,
+      `${PENDING_UPLOAD_INFO_DIR}/${file}`
+    );
+  });
 
   const form = new FormData();
 
@@ -229,8 +232,8 @@ function upload() {
 
   tar.create(
     { gzip: true
-    , cwd: pendingUploadPath
-    , file: pendingUploadArchivePath
+    , cwd: PENDING_UPLOAD_DIR
+    , file: PENDING_UPLOAD_ARCHIVE_PATH
     },
     [ "." ],
     _ => {
@@ -244,9 +247,13 @@ function upload() {
         path: SERVER_UPLOAD_PATH,
       }, (err, res) => {
         if (err) {
+          fs.readdirSync(`${PENDING_UPLOAD_LOG_DIR}`).forEach(file => {
+            fs.renameSync(
+              `${PENDING_UPLOAD_LOG_DIR}/${file}`,
+              `${LOG_DIR}/${file}`
+            );
+          });
           log("Upload failed: " + err);
-          // TODO need to move log files back here
-          // honestly should probably flatten timestamped file storage format
         } else {
           switch (res.statusCode) {
             case 200: // OK
@@ -270,8 +277,8 @@ function upload() {
           }
         }
 
-        fs.rmSync(pendingUploadPath, { recursive: true, force: true });
-        fs.rmSync(pendingUploadArchivePath);
+        fs.rmSync(PENDING_UPLOAD_DIR, { recursive: true, force: true });
+        fs.rmSync(PENDING_UPLOAD_ARCHIVE_PATH);
       });
     }
   );

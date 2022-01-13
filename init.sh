@@ -17,14 +17,13 @@ read -e -p "How many years of experience do you have programming in statically-t
 em=___edit-mirror___
 
 mkdir $em
-mkdir $em/logs
-mkdir $em/logs/current
-mkdir $em/logs/current/files
-mkdir $em/logs/current/compilations
-mkdir $em/logs/pending-upload
-echo $id > $em/id.txt
-echo "Experience: $exp" > $em/demographics.txt
 echo "/*" > $em/.gitignore
-echo "0" > $em/last-upload-request.txt
+
+mkdir $em/log
+mkdir $em/info
+
+echo $id > $em/info/id.txt
+echo "Experience: $exp" > $em/info/demographics.txt
+echo "0" > $em/info/last-upload-request.txt
 
 echo "Edit Mirror setup has completed."
