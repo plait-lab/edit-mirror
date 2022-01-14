@@ -458,7 +458,7 @@ async function handle(msg) {
 ////////////////////////////////////////////////////////////////////////////////
 // Updater
 
-// Also try to update the compiler wrapper
+// TODO Also try to update the compiler wrapper
 async function tryUpdate() {
   let latestVersion;
   try {
