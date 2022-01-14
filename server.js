@@ -3,16 +3,40 @@ const path = require("path");
 const http = require("http");
 const formidable = require("formidable");
 
+// Constants
+
 const PORT = 4040;
 const DATA_DIR = "data";
+
+// HTTP helpers
+
+function respond(res, code, content) {
+  res.writeHead(code, { "Content-Type": "application/json" });
+  if (content) {
+    res.end(JSON.stringify(content));
+  } else {
+    res.end();
+  }
+}
+
+function ensureContains(res, hay, hayName, needle) {
+  if (!(needle in hay)) {
+    respond(res, 400, `Missing ${hayName} '${needle}'`);
+  }
+}
+
+// Storage manager
 
 function store(serverTimestamp, clientId, dataTarballTempPath, callback) {
   fs.readdir(DATA_DIR, (err, clientDirs) => {
     if (err) {
-      return callback({ code: 500, val: err });
+      return callback({ code: 500, content: err });
     }
     if (!clientDirs.includes(clientId)) {
-      return callback({ code: 400, val: `Forbidden client id '${clientId}'`});
+      return callback({
+        code: 400,
+        content: `Forbidden client id '${clientId}'`
+      });
     }
     const uniqueSuffix = path.basename(dataTarballTempPath);
     fs.rename(
@@ -20,7 +44,7 @@ function store(serverTimestamp, clientId, dataTarballTempPath, callback) {
       `${DATA_DIR}/${clientId}/${serverTimestamp}-${uniqueSuffix}.tar.gz`,
       err => {
         if (err) {
-          return callback({ code: 500, val: err });
+          return callback({ code: 500, content: err });
         }
         return callback(null);
       }
@@ -28,55 +52,33 @@ function store(serverTimestamp, clientId, dataTarballTempPath, callback) {
   });
 }
 
+// Handlers
+
 function handlePost(req, res) {
   switch (req.url) {
     case "/upload":
       const serverTimestamp = new Date().getTime();
 
-      const form = formidable()
-
-      form.parse(req, (err, fields, files) => {
+      formidable().parse(req, (err, fields, files) => {
         if (err) {
-          res.writeHead(err.httpCode || 400, { "Content-Type": "text/plain" });
-          res.end(String(err));
-          return;
+          console.log(err);
+          return respond(res, 400, "Error parsing form: " + err.toString());
         }
 
-        if (!("client_id" in fields)) {
-          res.writeHead(400, { "Content-Type": "text/plain" });
-          res.end("Missing field 'client_id'");
-          return;
-        }
+        ensureContains(res, fields, "field", "client_id");
+        ensureContains(res, fields, "field", "client_version");
+        ensureContains(res, fields, "field", "client_timestamp");
 
-        if (!("client_version" in fields)) {
-          res.writeHead(400, { "Content-Type": "text/plain" });
-          res.end("Missing field 'client_version'");
-          return;
-        }
-
-        if (!("client_timestamp" in fields)) {
-          res.writeHead(400, { "Content-Type": "text/plain" });
-          res.end("Missing field 'client_timestamp'");
-          return;
-        }
-
-        if (!("data_tarball" in files)) {
-          res.writeHead(400, { "Content-Type": "text/plain" });
-          res.end("Missing file 'data_tarball'");
-          return;
-        }
+        ensureContains(res, files, "file", "data_tarball");
 
         const clientId = fields["client_id"];
-        // const clientVersion = fields["client_version"];
         const dataTarballPath = files["data_tarball"].path;
 
         store(serverTimestamp, clientId, dataTarballPath, err => {
           if (err) {
-            res.writeHead(err.code);
-            res.end(String(err.val));
+            respond(res, err.code, err.content);
           } else {
-            res.writeHead(200);
-            res.end();
+            respond(res, 200);
           }
         });
       });
@@ -84,30 +86,28 @@ function handlePost(req, res) {
       break;
 
     default:
-      res.writeHead(404, { "Content-Type": "text/plain" });
-      res.end(`Unsupported POST URL '${req.url}'`);
+      respond(res, 404, `Unsupported POST URL '${req.url}'`);
       break;
   }
 }
 
 function handleGet(req, res) {
   switch (req.url) {
-    case "/version":
-      res.writeHead(200, { "Content-Type": "text/plain" });
-      res.end("1.0.0"); // TODO return actual version using env vars
+    case "/latest-client-version":
+      respond(res, 200, "0.1.0"); // TODO return actual version using env vars
       break;
 
-    case "/latestClient":
-      res.writeHead(200, { "Content-Type": "text/plain" });
-      res.end("TODO"); // TODO return client using readFile
+    case "/latest-client":
+      respond(res, 200, "TODO"); // TODO return client using readFile
       break;
 
     default:
-      res.writeHead(404, { "Content-Type": "text/plain" });
-      res.end(`Unsupported GET URL '${req.url}'`);
+      respond(res, 404, `Unsupported GET URL '${req.url}'`);
       break;
   }
 }
+
+// Main
 
 function listener(req, res) {
   console.log(`Received request: ${req.method} ${req.url}`);
@@ -121,17 +121,16 @@ function listener(req, res) {
       break;
 
     default:
-      res.writeHead(404);
-      res.end(`Unsupported request method '${req.method}'`);
+      respond(res, 404, `Unsupported request method '${req.method}'`);
       break;
   }
 }
 
 const server = http.createServer(listener);
 
-server.on('clientError', (err, socket) => {
+server.on("clientError", (err, socket) => {
   console.log(err);
-  socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+  socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
 });
 
 server.listen(PORT);
