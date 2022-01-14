@@ -13,7 +13,7 @@ const chokidar = require("chokidar");
 const FormData = require("form-data");
 const tar = require("tar");
 
-const read = util.promisify(fs.read);
+const fspRead = util.promisify(fs.read);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -22,7 +22,27 @@ const VERSION = "0.1.0";
 
 const SERVER_HOSTNAME = "localhost";
 const SERVER_PORT = 4040;
-const SERVER_UPLOAD_PATH = "/upload";
+
+const UPLOAD_OPTIONS = {
+  method: "POST",
+  host: SERVER_HOSTNAME,
+  port: SERVER_PORT,
+  path: "/upload"
+}
+
+const LATEST_CLIENT_VERSION_OPTIONS = {
+  method: "GET",
+  host: SERVER_HOSTNAME,
+  port: SERVER_PORT,
+  path: "/latest-client-version"
+}
+
+const LATEST_CLIENT_OPTIONS = {
+  method: "GET",
+  host: SERVER_HOSTNAME,
+  port: SERVER_PORT,
+  path: "/latest-client"
+}
 
 const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.002;
 
@@ -31,6 +51,7 @@ const PLUGIN_DIR = "___edit-mirror___";
 const LOG_DIR = PLUGIN_DIR + "/log";
 const PENDING_UPLOAD_DIR = PLUGIN_DIR + "/pending-upload";
 const INFO_DIR = PLUGIN_DIR + "/info";
+const VERSIONS_DIR = PLUGIN_DIR + "/versions";
 
 const PENDING_UPLOAD_ARCHIVE_PATH = PENDING_UPLOAD_DIR + ".tar.gz"
 const PENDING_UPLOAD_LOG_DIR = PENDING_UPLOAD_DIR + "/log"
@@ -55,6 +76,38 @@ let ID = null;
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers
 
+// HTTP helpers
+
+// Source: https://stackoverflow.com/a/56122489
+function request(options, data) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(options, res => {
+      res.setEncoding("utf8");
+      let responseBody = "";
+
+      res.on("data", chunk => {
+        responseBody += chunk;
+      });
+
+      res.on("end", () => {
+        resolve({
+          code: res.statusCode,
+          content: JSON.parse(responseBody)}
+        );
+      });
+    });
+
+    req.on("error", err => {
+      reject(err);
+    });
+
+    if (data) {
+      req.write(data)
+    }
+    req.end();
+  });
+}
+
 // File helpers
 
 function copyAllVisibleSync(sourceDir, targetDir) {
@@ -78,7 +131,7 @@ function millisToHours(millis) {
 // IO helpers
 
 async function get(n) {
-  const { buffer } = await read(0, Buffer.alloc(n), 0, n, null);
+  const { buffer } = await fspRead(0, Buffer.alloc(n), 0, n, null);
   return buffer.toString("utf8");
 }
 
@@ -105,6 +158,10 @@ function log(text) {
 
 function dlog(text) {
   log("[DEBUG] " + text);
+}
+
+function elog(text) {
+  log("[ERROR] " + text);
 }
 
 // JSON RPC helpers
@@ -177,7 +234,7 @@ async function requestUploadIfNecessary(currentTimestamp) {
 // Storage manager
 
 async function store(timestamp, kind, sourcePath, sourceContent) {
-  const sourcePathEncoding = sourceContent.replaceAll("/", "$");
+  const sourcePathEncoding = sourcePath.replaceAll("/", "$");
   const filename = `${LOG_DIR}/${timestamp}-${kind}-${sourcePathEncoding}`
 
   await fsp.writeFile(filename, sourceContent);
@@ -238,14 +295,9 @@ function upload() {
     [ "." ],
     _ => {
       form.append("data_tarball",
-        fs.createReadStream(pendingUploadArchivePath));
+        fs.createReadStream(PENDING_UPLOAD_ARCHIVE_PATH));
 
-      form.submit({
-        method: "POST",
-        host: SERVER_HOSTNAME,
-        port: SERVER_PORT,
-        path: SERVER_UPLOAD_PATH,
-      }, (err, res) => {
+      form.submit(UPLOAD_OPTIONS, (err, res) => {
         if (err) {
           fs.readdirSync(`${PENDING_UPLOAD_LOG_DIR}`).forEach(file => {
             fs.renameSync(
@@ -253,11 +305,11 @@ function upload() {
               `${LOG_DIR}/${file}`
             );
           });
-          log("Upload failed: " + err);
+          elog("Upload failed: " + err);
         } else {
           switch (res.statusCode) {
             case 200: // OK
-              dlog("Server accepted upload.");
+              log("Server accepted upload.");
               res.resume();
               break;
 
@@ -266,7 +318,7 @@ function upload() {
               let rawData = "";
               res.on("data", chunk => { rawData += chunk; });
               res.on("end", () => {
-                log(
+                elog(
                   "Server responded with status code "
                     + res.statusCode
                     + ": "
@@ -319,7 +371,8 @@ async function handle(msg) {
 
       const rootUri = msg.params.rootUri;
       if (!rootUri.startsWith(FILE_URI_PREFIX)) {
-        throw new Error("Non-file URIs not supported: '" + rootUri + "'");
+        elog("Non-file URIs not supported: '" + rootUri + "'");
+        return;
       }
       ROOT_PATH = rootUri.substring(FILE_URI_PREFIX.length);
 
@@ -342,28 +395,27 @@ async function handle(msg) {
     case "textDocument/didChange":
       const uri = msg.params.textDocument.uri;
       if (!uri.startsWith(FILE_URI_PREFIX)) {
-        log("Non-file URIs not supported: '" + uri + "'");
+        elog("Non-file URIs not supported: '" + uri + "'");
         return;
       }
 
       const path = uri.substring(FILE_URI_PREFIX.length);
       if (!path.startsWith(ROOT_PATH)) {
-        throw new Error(
-          "Text document path '"
-            + path
-            + "' does not begin with root path '"
-            + ROOT_PATH
-            + "'"
+        elog(
+          `Text document path '${path}' does not begin with `
+            + `root path '${ROOT_PATH}'`
         );
+        return;
       }
 
       const contentChanges = msg.params.contentChanges;
       const lastContentChange = contentChanges[contentChanges.length - 1];
       if ("range" in lastContentChange) {
-        throw new Error(
+        elog(
           "Last content change is non-incremental: "
             + JSON.stringify(lastContentChange)
         );
+        return;
       }
 
       const sourceFilename = path.substring(ROOT_PATH.length + 1);
@@ -404,26 +456,96 @@ async function handle(msg) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Uploader
+// Updater
 
+// Also try to update the compiler wrapper
 async function tryUpdate() {
-  // TODO
-  // make http request to berkeley server for latest version string
-  // if it's different than VERSION, make another request for the latest file
-  // download that file, replace current file with it
-  //   -> the program will be updated for the next run
-  // also notify user?
+  let latestVersion;
+  try {
+    const { code, content } = await request(LATEST_CLIENT_VERSION_OPTIONS);
+    if (code !== 200) {
+      elog(`Status ${code} returned when retrieving latest client version: `
+          + JSON.stringify(content)
+      );
+      return;
+    }
+    latestVersion = content;
+  } catch (err) {
+    elog(`Error retrieving latest client version: ${err}`);
+    return;
+  }
+
+  if (latestVersion === VERSION) {
+    return;
+  }
+
+  log(
+    `New client version! Attempting to update from v${VERSION} to `
+      + `v${latestVersion}...`
+  );
+
+  let currentClient;
+  try {
+    currentClient = await fsp.readFile(__filename);
+  } catch (err) {
+    elog(`Error retrieving current client: ${err}`);
+    return;
+  }
+
+  let latestClient;
+  try {
+    latestClient = await request(LATEST_CLIENT_OPTIONS);
+    const { code, content } = await request(LATEST_CLIENT_OPTIONS);
+    if (code !== 200) {
+      elog(`Status ${code} returned when retrieving latest client version: `
+          + JSON.stringify(content)
+      );
+      return;
+    }
+    latestClient = content;
+  } catch (err) {
+    elog(`Error retrieving latest client: ${err}`);
+    return;
+  }
+
+  try {
+    await fsp.writeFile(
+      `${VERSIONS_DIR}/edit-mirror-${VERSION}`,
+      currentClient
+    );
+  } catch (err) {
+    elog(`Error writing backup of current client: ${err}`);
+    return;
+  }
+
+  dlog("[TODO] Auto-updating disabled for now.");
+  return;
+
+  try {
+    await fsp.writeFile(__filename, latestClient);
+    await fsp.chmod(__filename, 0o755);
+    log(`Successfully updated from from v${VERSION} to v${latestVersion}.`);
+  } catch (err) {
+    elog(`Error overwriting current client with latest client: ${err}`);
+    log(`Restoring previous version...`);
+    try {
+      fs.writeFileSync(__filename, currentClient);
+      fs.chmodSync(__filename, 0o755);
+    } catch (err) {
+      elog(`Couldn't restore previous version: ${err}`);
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Main
 
 process.on('uncaughtException', function (error) {
-  log("[ERROR] " + error.stack.toString());
+  elog(error.stack.toString());
 });
 
 async function main() {
-  log("--- Starting new edit-mirror session ---");
+  log("--- Starting new Edit Mirror session ---");
   await tryUpdate();
   await listen(handle);
 }

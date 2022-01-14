@@ -21,6 +21,7 @@ echo "/*" > $em/.gitignore
 
 mkdir $em/log
 mkdir $em/info
+mkdir $em/versions
 
 echo $id > $em/info/id.txt
 echo "Experience: $exp" > $em/info/demographics.txt
