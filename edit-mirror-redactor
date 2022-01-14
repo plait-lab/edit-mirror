@@ -2,6 +2,8 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+# TODO: this script should be run from the root directory, it shouldn't need to
+# be in the plugin directory
 if [[ $(basename "$PWD") != "___edit-mirror___" ]]; then
   echo "Error: please ensure that this script is located in the ___edit-mirror___ directory."
   exit 1
