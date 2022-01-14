@@ -94,11 +94,15 @@ function handlePost(req, res) {
 function handleGet(req, res) {
   switch (req.url) {
     case "/latest-client-version":
-      respond(res, 200, "0.1.0"); // TODO return actual version using env vars
+      respond(res, 500, "Under construction");
+      // TODO return actual version, possibly stored in a file or something,
+      // maybe env vars or parsing the actual client file
+      // respond(res, 200, "0.1.0");
       break;
 
     case "/latest-client":
-      respond(res, 200, "TODO"); // TODO return client using readFile
+      respond(res, 500, "Under construction");
+      // TODO return client using readFile
       break;
 
     default:
