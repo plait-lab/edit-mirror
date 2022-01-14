@@ -60,6 +60,7 @@ const PENDING_UPLOAD_INFO_DIR = PENDING_UPLOAD_DIR + "/info"
 const ID_PATH = INFO_DIR + "/id.txt";
 const LAST_UPLOAD_REQUEST_PATH = INFO_DIR + "/last-upload-request.txt";
 const DEMOGRAPHICS_PATH = INFO_DIR + "/demographics.txt";
+const PLUGIN_LOG_PATH = INFO_DIR + "/plugin-log.txt"
 
 const WATCHED_EXTENSION = ".elm";
 const WATCHED_PATHS = ["**/*.elm", "elm.json"];
@@ -147,23 +148,6 @@ async function getLine() {
   return line.trim();
 }
 
-const logStream = fs.createWriteStream(
-  "/Users/jlubin/Desktop/log.txt", { flags: "a" }
-);
-
-function log(text) {
-  const timestamp = new Date().getTime();
-  logStream.write("[" + timestamp + "] " + text + "\n");
-}
-
-function dlog(text) {
-  log("[DEBUG] " + text);
-}
-
-function elog(text) {
-  log("[ERROR] " + text);
-}
-
 // JSON RPC helpers
 
 function sendMessage(content) {
@@ -204,6 +188,25 @@ function sendPromptRequest(message, options) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Logging
+
+const logStream = fs.createWriteStream(PLUGIN_LOG_PATH, { flags: "a" });
+
+function log(kind, text) {
+  const timestamp = new Date().getTime();
+  const prefix = `[${kind}]`.padEnd(10);
+  logStream.write(`${timestamp}: ${prefix}: ${text}\n`);
+}
+
+function logInfo(text) {
+  log("INFO", text);
+}
+
+function logError(text) {
+  log("! ERR !", text);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // User consent
 
 let consentToUploadId = null;
@@ -222,9 +225,8 @@ function indicatesConsent(option) {
 async function requestUploadIfNecessary(currentTimestamp) {
   const lastRequested = parseInt(await fsp.readFile(LAST_UPLOAD_REQUEST_PATH));
   const hoursElapsed = millisToHours(currentTimestamp - lastRequested);
-  dlog("Hours elapsed: " + hoursElapsed);
   if (hoursElapsed > UPLOAD_REQUEST_THRESHOLD_HOURS) {
-    log("Requesting upload after " + hoursElapsed.toFixed(2) + " hours");
+    logInfo("Requesting upload after " + hoursElapsed.toFixed(2) + " hours");
     await fsp.writeFile(LAST_UPLOAD_REQUEST_PATH, currentTimestamp.toString());
     requestUpload();
   }
@@ -305,11 +307,11 @@ function upload() {
               `${LOG_DIR}/${file}`
             );
           });
-          elog("Upload failed: " + err);
+          logError(`Upload failed: ${err}`);
         } else {
           switch (res.statusCode) {
             case 200: // OK
-              log("Server accepted upload.");
+              logInfo("Server accepted upload");
               res.resume();
               break;
 
@@ -318,11 +320,9 @@ function upload() {
               let rawData = "";
               res.on("data", chunk => { rawData += chunk; });
               res.on("end", () => {
-                elog(
-                  "Server responded with status code "
-                    + res.statusCode
-                    + ": "
-                    + rawData
+                logError(
+                  `Server responded with status code `
+                    + `${res.statusCode}: ${rawData}`
                 );
               });
               break;
@@ -340,7 +340,7 @@ function upload() {
 // Language server protocol
 
 async function listen(handler) {
-  log("Listening...");
+  logInfo("Listening...");
   while (true) {
     const header = {};
     while (true) {
@@ -367,11 +367,11 @@ async function handle(msg) {
 
   switch (msg.method) {
     case "initialize":
-      log("Starting initialization...");
+      logInfo("Starting initialization...");
 
       const rootUri = msg.params.rootUri;
       if (!rootUri.startsWith(FILE_URI_PREFIX)) {
-        elog("Non-file URIs not supported: '" + rootUri + "'");
+        logError(`Non-file URIs not supported: '${rootUri}'`);
         return;
       }
       ROOT_PATH = rootUri.substring(FILE_URI_PREFIX.length);
@@ -386,7 +386,7 @@ async function handle(msg) {
         }
       });
 
-      log("Initialized!");
+      logInfo("Initialized!");
 
       await requestUploadIfNecessary(timestamp);
 
@@ -395,13 +395,13 @@ async function handle(msg) {
     case "textDocument/didChange":
       const uri = msg.params.textDocument.uri;
       if (!uri.startsWith(FILE_URI_PREFIX)) {
-        elog("Non-file URIs not supported: '" + uri + "'");
+        logError(`Non-file URIs not supported: '${uri}'`);
         return;
       }
 
       const path = uri.substring(FILE_URI_PREFIX.length);
       if (!path.startsWith(ROOT_PATH)) {
-        elog(
+        logError(
           `Text document path '${path}' does not begin with `
             + `root path '${ROOT_PATH}'`
         );
@@ -411,7 +411,7 @@ async function handle(msg) {
       const contentChanges = msg.params.contentChanges;
       const lastContentChange = contentChanges[contentChanges.length - 1];
       if ("range" in lastContentChange) {
-        elog(
+        logError(
           "Last content change is non-incremental: "
             + JSON.stringify(lastContentChange)
         );
@@ -464,14 +464,15 @@ async function tryUpdate() {
   try {
     const { code, content } = await request(LATEST_CLIENT_VERSION_OPTIONS);
     if (code !== 200) {
-      elog(`Status ${code} returned when retrieving latest client version: `
+      logError(
+        `Status ${code} returned when retrieving latest client version: `
           + JSON.stringify(content)
       );
       return;
     }
     latestVersion = content;
   } catch (err) {
-    elog(`Error retrieving latest client version: ${err}`);
+    logError(`Error retrieving latest client version: ${err}`);
     return;
   }
 
@@ -479,7 +480,7 @@ async function tryUpdate() {
     return;
   }
 
-  log(
+  logInfo(
     `New client version! Attempting to update from v${VERSION} to `
       + `v${latestVersion}...`
   );
@@ -488,7 +489,7 @@ async function tryUpdate() {
   try {
     currentClient = await fsp.readFile(__filename);
   } catch (err) {
-    elog(`Error retrieving current client: ${err}`);
+    logError(`Error retrieving current client: ${err}`);
     return;
   }
 
@@ -497,14 +498,15 @@ async function tryUpdate() {
     latestClient = await request(LATEST_CLIENT_OPTIONS);
     const { code, content } = await request(LATEST_CLIENT_OPTIONS);
     if (code !== 200) {
-      elog(`Status ${code} returned when retrieving latest client version: `
+      logError(
+        `Status ${code} returned when retrieving latest client version: `
           + JSON.stringify(content)
       );
       return;
     }
     latestClient = content;
   } catch (err) {
-    elog(`Error retrieving latest client: ${err}`);
+    logError(`Error retrieving latest client: ${err}`);
     return;
   }
 
@@ -514,25 +516,25 @@ async function tryUpdate() {
       currentClient
     );
   } catch (err) {
-    elog(`Error writing backup of current client: ${err}`);
+    logError(`Error writing backup of current client: ${err}`);
     return;
   }
 
-  dlog("[TODO] Auto-updating disabled for now.");
+  log("TODO", "Auto-updating disabled for now.");
   return;
 
   try {
     await fsp.writeFile(__filename, latestClient);
     await fsp.chmod(__filename, 0o755);
-    log(`Successfully updated from from v${VERSION} to v${latestVersion}.`);
+    logInfo(`Successfully updated from from v${VERSION} to v${latestVersion}.`);
   } catch (err) {
-    elog(`Error overwriting current client with latest client: ${err}`);
-    log(`Restoring previous version...`);
+    logError(`Error overwriting current client with latest client: ${err}`);
+    logInfo(`Restoring previous version...`);
     try {
       fs.writeFileSync(__filename, currentClient);
       fs.chmodSync(__filename, 0o755);
     } catch (err) {
-      elog(`Couldn't restore previous version: ${err}`);
+      logError(`Couldn't restore previous version: ${err}`);
     }
   }
 }
@@ -541,11 +543,11 @@ async function tryUpdate() {
 // Main
 
 process.on('uncaughtException', function (error) {
-  elog(error.stack.toString());
+  logError(error.stack.toString());
 });
 
 async function main() {
-  log("--- Starting new Edit Mirror session ---");
+  logInfo("--- Starting new Edit Mirror session ---");
   await tryUpdate();
   await listen(handle);
 }
