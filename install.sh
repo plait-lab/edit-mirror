@@ -1,11 +1,18 @@
-read -e -p "Enter installation directory [blank for ~/bin]: " dir
-dir=${dir:-~/bin}
+read -e -p 'What is your Edit Mirror ID? ' id
+read -e -p "How many years of experience do you have programming in statically-typed functional programming languages (such as Elm)? " experience
 
-mkdir -p $dir
-cd $dir
+read -e -p 'Where would you like to install Edit Mirror? Please ensure that the directory you enter is in your PATH [blank for ~/bin] ' installation_dir
+installation_dir=${dir:-~/bin}
+
+mkdir -p $installation_dir
+cd $installation_dir
 
 # TODO update git URL
-git clone git@github.com:justinlubin/edit-mirror.git edit-mirror-repo
+repo_dir='edit-mirror-repo'
+git clone git@github.com:justinlubin/edit-mirror.git $repo_dir
 
-ln -s edit-mirror-repo/edit-mirror.sh edit-mirror
+ln -s $repo_dir/edit-mirror.sh edit-mirror
 chmod 755 edit-mirror
+
+echo '{"id": "'$id'", "experience": "'$experience'"}' \
+  > $repo_dir/user-data.txt
