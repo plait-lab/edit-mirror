@@ -1,7 +1,7 @@
 read -e -p 'What is your Edit Mirror ID? ' id
-read -e -p "How many years of experience do you have programming in statically-typed functional programming languages (such as Elm)? " experience
+read -e -p 'How many years of experience do you have programming in statically-typed functional programming languages (such as Elm)? ' experience
 
-read -e -p 'Where would you like to install Edit Mirror? Please ensure that the directory you enter is in your PATH [blank for ~/bin] ' installation_dir
+read -e -p 'Where would you like to install Edit Mirror? Please ensure that the directory you enter is in your PATH. [blank for ~/bin] ' installation_dir
 installation_dir=${dir:-~/bin}
 
 mkdir -p $installation_dir
