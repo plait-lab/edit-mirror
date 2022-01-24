@@ -1,3 +1,4 @@
+const os = require("os");
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
@@ -6,7 +7,7 @@ const formidable = require("formidable");
 // Constants
 
 const PORT = 4040;
-const DATA_DIR = "data";
+const DATA_DIR = os.homedir() + "/edit-mirror-web-server-data";
 
 // HTTP helpers
 
@@ -128,6 +129,11 @@ function listener(req, res) {
       respond(res, 404, `Unsupported request method '${req.method}'`);
       break;
   }
+}
+
+if (!fs.existsSync(DATA_DIR)) {
+  console.error(`Error: Data directory '${DATA_DIR}' does not exist`);
+  process.exit(1);
 }
 
 const server = http.createServer(listener);
