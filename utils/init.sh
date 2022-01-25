@@ -1,30 +1,30 @@
-#!/usr/bin/env bash
+echo 'Have you signed and returned the consent form for this study?'
+select consent in 'Yes' 'No'; do
+  case $consent in
+    Yes) break;;
+    No) echo "Exiting without enabling Edit Mirror for current project"; exit;;
+  esac
+done
 
-# confirm consent
-# ask for id, demographics
-# create PLUGIN_DIR and necessary subfolders/files
-# download/install lsp
-# instruct user to install language client in their editor configured for elm
-#    - need to look into having both the official lsp and my lsp installed for
-#      elm
-# put the elm.sh in PATH correctly somehow
+echo 'Do you want to enable Edit Mirror for the current project?'
+select enabled in 'Yes' 'No'; do
+  case $enabled in
+    Yes) break;;
+    No) echo "Exiting without enabling Edit Mirror for current project"; exit;;
+  esac
+done
 
-# TODO consent
+echo 'Initializing Edit Mirror for current project...'
 
-read -e -p "What is your Edit Mirror ID? " id
-read -e -p "How many years of experience do you have programming in statically-typed functional programming languages (such as Elm)? " exp
+plugin_dir=___edit-mirror___
 
-em=___edit-mirror___
+mkdir $plugin_dir
+echo "/*" > $plugin_dir/.gitignore
 
-mkdir $em
-echo "/*" > $em/.gitignore
+mkdir $plugin_dir/log
+mkdir $plugin_dir/metadata
 
-mkdir $em/log
-mkdir $em/info
-mkdir $em/versions
+echo "0" > $plugin_dir/metadata/last-upload-request.txt
+touch $plugin_dir/metadata/plugin-log.txt
 
-echo $id > $em/info/id.txt
-echo "Experience: $exp" > $em/info/demographics.txt
-echo "0" > $em/info/last-upload-request.txt
-
-echo "Edit Mirror setup has completed."
+echo "Edit Mirror initialization successfully completed for current project"

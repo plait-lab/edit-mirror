@@ -5,10 +5,9 @@ name="$(basename "$0")"
 cmd=$1
 
 shift
-cd $dir
 
 usage() {
-  echo "Usage: $name <elm|language-server|update> [options]"
+  echo "Usage: $name <elm|init|language-server|update> [options]"
 }
 
 case $cmd in
@@ -16,13 +15,16 @@ case $cmd in
     usage
     ;;
   "elm")
-    bash utils/elm.sh $@
+    bash $dir/utils/elm.sh $@
+    ;;
+  "init")
+    bash $dir/utils/init.sh $@
     ;;
   "language-server")
-    node language-server/index.js $@
+    node $dir/language-server/index.js $@
     ;;
   "update")
-    bash utils/update.sh $@
+    bash $dir/utils/update.sh $@
     ;;
   *)
     echo "Invalid command"

@@ -1,3 +1,13 @@
+# TODO confirm consent form
+
+echo 'Have you signed and returned the consent form for this study?'
+select consent in 'Yes' 'No'; do
+  case $consent in
+    Yes) break;;
+    No) exit;;
+  esac
+done
+
 read -e -p 'What is your Edit Mirror ID? ' id
 read -e -p 'How many years of experience do you have programming in statically-typed functional programming languages (such as Elm)? ' experience
 

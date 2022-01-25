@@ -46,7 +46,7 @@ const PENDING_UPLOAD_LOG_DIR = PENDING_UPLOAD_DIR + "/log"
 const PENDING_UPLOAD_METADATA_DIR = PENDING_UPLOAD_DIR + "/metadata"
 
 const LAST_UPLOAD_REQUEST_PATH = METADATA_DIR + "/last-upload-request.txt";
-const PLUGIN_LOG_PATH = METADATA_DIR + "/plugin-log.txt"
+const PLUGIN_LOG_PATH = "/Users/jlubin/Desktop/hello.txt";//METADATA_DIR + "/plugin-log.txt"
 
 const WATCHED_EXTENSION = ".elm";
 const WATCHED_PATHS = ["**/*.elm", "elm.json"];
@@ -229,11 +229,20 @@ function watchHandler(kind) {
   });
 }
 
-function watchFiles() {
-  chokidar.watch(WATCHED_PATHS, { ignored: IGNORED_PATHS })
+async function watchFiles() {
+  const watcher = chokidar.watch(WATCHED_PATHS, { ignored: IGNORED_PATHS });
+
+  watcher
     .on("add", watchHandler("add"))
     .on("change", watchHandler("change"))
     .on("unlink", watchHandler("unlink"));
+
+  // TODO fix this
+  const initHandler = watchHandler("init");
+  logInfo(JSON.stringify(watcher.getWatched()));
+  for (const path of watcher.getWatched()) {
+    await initHandler(path);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -380,7 +389,7 @@ async function handle(msg) {
 
       USER_INFO = JSON.parse(await fsp.readFile(USER_INFO_PATH));
 
-			watchFiles();
+			await watchFiles();
 
 			sendResponse(msg.id, {
         capabilities: {
@@ -469,6 +478,7 @@ process.on('uncaughtException', function (error) {
 });
 
 async function main() {
+    logInfo("test");
   if (ENABLED) {
     logInfo("--- Starting new Edit Mirror session ---");
     tryUpdate();
