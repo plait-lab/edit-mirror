@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Imports
 
+const child_process = require("child_process");
 const util = require("util");
 const path = require("path");
 const fs = require("fs");
@@ -28,19 +29,7 @@ const UPLOAD_OPTIONS = {
   path: "/upload"
 }
 
-const LATEST_CLIENT_VERSION_OPTIONS = {
-  method: "GET",
-  host: SERVER_HOSTNAME,
-  port: SERVER_PORT,
-  path: "/latest-client-version"
-}
-
-const LATEST_CLIENT_OPTIONS = {
-  method: "GET",
-  host: SERVER_HOSTNAME,
-  port: SERVER_PORT,
-  path: "/latest-client"
-}
+const UPDATE_COMMAND = "edit-mirror update";
 
 const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.002;
 
@@ -456,85 +445,16 @@ async function handle(msg) {
 ////////////////////////////////////////////////////////////////////////////////
 // Updater
 
-// TODO Also try to update the compiler wrapper
-async function tryUpdate() {
-  let latestVersion;
-  try {
-    const { code, content } = await request(LATEST_CLIENT_VERSION_OPTIONS);
-    if (code !== 200) {
-      logError(
-        `Status ${code} returned when retrieving latest client version: `
-          + JSON.stringify(content)
-      );
-      return;
+function tryUpdate() {
+  child_process.exec(UPDATE_COMMAND, (error, stdout, stderr) => {
+    logInfo("Begin exec() info from update");
+    if (error) {
+      logError(`exec() error while updating: ${error}`);
     }
-    latestVersion = content;
-  } catch (err) {
-    logError(`Error retrieving latest client version: ${err}`);
-    return;
-  }
-
-  if (latestVersion === VERSION) {
-    return;
-  }
-
-  logInfo(
-    `New client version! Attempting to update from v${VERSION} to `
-      + `v${latestVersion}...`
-  );
-
-  let currentClient;
-  try {
-    currentClient = await fsp.readFile(__filename);
-  } catch (err) {
-    logError(`Error retrieving current client: ${err}`);
-    return;
-  }
-
-  let latestClient;
-  try {
-    latestClient = await request(LATEST_CLIENT_OPTIONS);
-    const { code, content } = await request(LATEST_CLIENT_OPTIONS);
-    if (code !== 200) {
-      logError(
-        `Status ${code} returned when retrieving latest client version: `
-          + JSON.stringify(content)
-      );
-      return;
-    }
-    latestClient = content;
-  } catch (err) {
-    logError(`Error retrieving latest client: ${err}`);
-    return;
-  }
-
-  try {
-    await fsp.writeFile(
-      `${VERSIONS_DIR}/edit-mirror-${VERSION}`,
-      currentClient
-    );
-  } catch (err) {
-    logError(`Error writing backup of current client: ${err}`);
-    return;
-  }
-
-  log("TODO", "Auto-updating disabled for now.");
-  return;
-
-  try {
-    await fsp.writeFile(__filename, latestClient);
-    await fsp.chmod(__filename, 0o755);
-    logInfo(`Successfully updated from from v${VERSION} to v${latestVersion}.`);
-  } catch (err) {
-    logError(`Error overwriting current client with latest client: ${err}`);
-    logInfo(`Restoring previous version...`);
-    try {
-      fs.writeFileSync(__filename, currentClient);
-      fs.chmodSync(__filename, 0o755);
-    } catch (err) {
-      logError(`Couldn't restore previous version: ${err}`);
-    }
-  }
+    logInfo(`stdout: ${stdout}`);
+    logInfo(`stderr: ${stderr}`);
+    logInfo("End exec() info from update");
+  });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -546,7 +466,7 @@ process.on('uncaughtException', function (error) {
 
 async function main() {
   logInfo("--- Starting new Edit Mirror session ---");
-  await tryUpdate();
+  tryUpdate();
   await listen(handle);
 }
 

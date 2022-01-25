@@ -14,5 +14,10 @@ git clone git@github.com:justinlubin/edit-mirror.git $repo_dir
 ln -s $repo_dir/edit-mirror.sh edit-mirror
 chmod 755 edit-mirror
 
+cd $repo_dir
+
 echo '{"id": "'$id'", "experience": "'$experience'"}' \
-  > $repo_dir/user-data.txt
+  > user-data.txt
+
+cd language-server
+npm install
