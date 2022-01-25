@@ -47,6 +47,7 @@ const PENDING_UPLOAD_METADATA_DIR = PENDING_UPLOAD_DIR + "/metadata"
 
 const LAST_UPLOAD_REQUEST_PATH = METADATA_DIR + "/last-upload-request.txt";
 const PLUGIN_LOG_PATH = METADATA_DIR + "/plugin-log.txt";
+const PROJECT_ID_PATH = METADATA_DIR + "/project-id.txt";
 
 const WATCHED_EXTENSION = ".elm";
 const WATCHED_PATHS = ["**/*.elm", "elm.json"];
@@ -59,6 +60,7 @@ const FILE_URI_PREFIX = "file://";
 
 let ROOT_PATH = null;
 let USER_INFO = null;
+let PROJECT_ID = null;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers
@@ -244,6 +246,7 @@ function upload() {
   form.append("client_version", VERSION);
   form.append("client_timestamp", timestamp);
   form.append("user_info", JSON.stringify(USER_INFO));
+  form.append("project_id", PROJECT_ID);
 
   tar.create(
     { gzip: true
@@ -343,6 +346,7 @@ async function initialize(msg, timestamp) {
   ROOT_PATH = rootUri.substring(FILE_URI_PREFIX.length);
 
   USER_INFO = JSON.parse(await fsp.readFile(USER_INFO_PATH));
+  PROJECT_ID = await fsp.readFile(PROJECT_ID_PATH);
 
   await watchFiles();
 

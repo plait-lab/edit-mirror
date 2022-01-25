@@ -24,7 +24,12 @@ echo "/*" > $plugin_dir/.gitignore
 mkdir $plugin_dir/log
 mkdir $plugin_dir/metadata
 
+edit-mirror uid-gen > $plugin_dir/metadata/project-id.txt || {
+  echo "Failed to initialize Edit Mirror for current project: could not generate UID";
+  rm -rf $plugin_dir
+  exit 1;
+}
 echo "0" > $plugin_dir/metadata/last-upload-request.txt
 touch $plugin_dir/metadata/plugin-log.txt
 
-echo "Edit Mirror initialization successfully completed for current project"
+echo "Successfully initialized Edit Mirror for current project"

@@ -7,7 +7,7 @@ cmd=$1
 shift
 
 usage() {
-  echo "Usage: $name <elm|init|language-server|update> [options]"
+  echo "Usage: $name <elm|init|language-server|uid-gen|update> [options]"
 }
 
 case $cmd in
@@ -22,6 +22,9 @@ case $cmd in
     ;;
   "language-server")
     node $dir/language-server/index.js $@
+    ;;
+  "uid-gen")
+    node $dir/utils/uid-gen.js $@
     ;;
   "update")
     bash $dir/utils/update.sh $@
