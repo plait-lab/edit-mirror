@@ -28,7 +28,7 @@ const UPLOAD_OPTIONS = {
   path: "/upload"
 }
 
-const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.002;
+const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.02;
 
 const REPO_DIR = path.normalize(__dirname + "/..");
 const PLUGIN_DIR = "___edit-mirror___";
@@ -46,7 +46,7 @@ const PENDING_UPLOAD_LOG_DIR = PENDING_UPLOAD_DIR + "/log"
 const PENDING_UPLOAD_METADATA_DIR = PENDING_UPLOAD_DIR + "/metadata"
 
 const LAST_UPLOAD_REQUEST_PATH = METADATA_DIR + "/last-upload-request.txt";
-const PLUGIN_LOG_PATH = "/Users/jlubin/Desktop/hello.txt";//METADATA_DIR + "/plugin-log.txt"
+const PLUGIN_LOG_PATH = METADATA_DIR + "/plugin-log.txt";
 
 const WATCHED_EXTENSION = ".elm";
 const WATCHED_PATHS = ["**/*.elm", "elm.json"];
@@ -62,38 +62,6 @@ let USER_INFO = null;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers
-
-// HTTP helpers
-
-// Source: https://stackoverflow.com/a/56122489
-function request(options, data) {
-  return new Promise((resolve, reject) => {
-    const req = http.request(options, res => {
-      res.setEncoding("utf8");
-      let responseBody = "";
-
-      res.on("data", chunk => {
-        responseBody += chunk;
-      });
-
-      res.on("end", () => {
-        resolve({
-          code: res.statusCode,
-          content: JSON.parse(responseBody)}
-        );
-      });
-    });
-
-    req.on("error", err => {
-      reject(err);
-    });
-
-    if (data) {
-      req.write(data)
-    }
-    req.end();
-  });
-}
 
 // Time helpers
 
@@ -225,24 +193,31 @@ function watchHandler(kind) {
     }
     const timestamp = new Date().getTime();
     const content = kind === "unlink" ? "" : await fsp.readFile(path);
-    store(timestamp, "watched-" + kind, path, content);
+    await store(timestamp, "watched-" + kind, path, content);
   });
 }
 
 async function watchFiles() {
-  const watcher = chokidar.watch(WATCHED_PATHS, { ignored: IGNORED_PATHS });
+  const watcher = chokidar.watch(WATCHED_PATHS, {
+    ignored: IGNORED_PATHS,
+    cwd: ".",
+    atomic: 500 // ms ; TODO: check to make sure this is okay
+  });
 
   watcher
     .on("add", watchHandler("add"))
     .on("change", watchHandler("change"))
     .on("unlink", watchHandler("unlink"));
 
-  // TODO fix this
-  const initHandler = watchHandler("init");
-  logInfo(JSON.stringify(watcher.getWatched()));
-  for (const path of watcher.getWatched()) {
-    await initHandler(path);
-  }
+  watcher.on("ready", async () => {
+    const initHandler = watchHandler("init");
+    for (const [dir, baseNames] of Object.entries(watcher.getWatched())) {
+      for (const baseName of baseNames) {
+        const path = dir === "." ? baseName : `${dir}/${baseName}`;
+        await initHandler(path);
+      }
+    }
+  });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -320,8 +295,7 @@ function upload() {
 ////////////////////////////////////////////////////////////////////////////////
 // Language server protocol
 
-async function listen(handler) {
-  logInfo("Listening...");
+async function listen(handle) {
   while (true) {
     const header = {};
     while (true) {
@@ -336,12 +310,11 @@ async function listen(handler) {
     const contentLength = parseInt(header["Content-Length"]);
     const content = await get(contentLength);
 
-    // Body
     await handle(JSON.parse(content));
   }
 }
 
-async function doNothingHandle(msg) {
+async function passiveHandle(msg) {
   switch (msg.method) {
     case "initialize":
 			sendResponse(msg.id, {
@@ -359,7 +332,65 @@ async function doNothingHandle(msg) {
   }
 }
 
-async function handle(msg) {
+async function initialize(msg, timestamp) {
+  logInfo("Starting initialization...");
+
+  const rootUri = msg.params.rootUri;
+  if (!rootUri.startsWith(FILE_URI_PREFIX)) {
+    logError(`Non-file URIs not supported: '${rootUri}'`);
+    return;
+  }
+  ROOT_PATH = rootUri.substring(FILE_URI_PREFIX.length);
+
+  USER_INFO = JSON.parse(await fsp.readFile(USER_INFO_PATH));
+
+  await watchFiles();
+
+  sendResponse(msg.id, {
+    capabilities: {
+      textDocumentSync: 1
+    }
+  });
+
+  logInfo("Initialized!");
+
+  await requestUploadIfNecessary(timestamp);
+}
+
+async function textDocumentDidChange(msg, timestamp) {
+  const uri = msg.params.textDocument.uri;
+  if (!uri.startsWith(FILE_URI_PREFIX)) {
+    logError(`Non-file URIs not supported: '${uri}'`);
+    return;
+  }
+
+  const path = uri.substring(FILE_URI_PREFIX.length);
+  if (!path.startsWith(ROOT_PATH)) {
+    logError(
+      `Text document path '${path}' does not begin with `
+        + `root path '${ROOT_PATH}'`
+    );
+    return;
+  }
+
+  const contentChanges = msg.params.contentChanges;
+  const lastContentChange = contentChanges[contentChanges.length - 1];
+  if ("range" in lastContentChange) {
+    logError(
+      "Last content change is non-incremental: "
+        + JSON.stringify(lastContentChange)
+    );
+    return;
+  }
+
+  const sourceFilename = path.substring(ROOT_PATH.length + 1);
+  const sourceContent = lastContentChange.text;
+
+  await store(timestamp, "buffer", sourceFilename, sourceContent);
+  await requestUploadIfNecessary(timestamp);
+}
+
+async function activeHandle(msg) {
   const timestamp = new Date().getTime();
 
   // Client responses
@@ -378,80 +409,25 @@ async function handle(msg) {
 
   switch (msg.method) {
     case "initialize":
-      logInfo("Starting initialization...");
-
-      const rootUri = msg.params.rootUri;
-      if (!rootUri.startsWith(FILE_URI_PREFIX)) {
-        logError(`Non-file URIs not supported: '${rootUri}'`);
-        return;
-      }
-      ROOT_PATH = rootUri.substring(FILE_URI_PREFIX.length);
-
-      USER_INFO = JSON.parse(await fsp.readFile(USER_INFO_PATH));
-
-			await watchFiles();
-
-			sendResponse(msg.id, {
-        capabilities: {
-          textDocumentSync: 1
-        }
-      });
-
-      logInfo("Initialized!");
-
-      await requestUploadIfNecessary(timestamp);
-
-      break;
+      await initialize(msg, timestamp);
+      return;
 
     case "textDocument/didChange":
-      const uri = msg.params.textDocument.uri;
-      if (!uri.startsWith(FILE_URI_PREFIX)) {
-        logError(`Non-file URIs not supported: '${uri}'`);
-        return;
-      }
+      await textDocumentDidChange(msg, timestamp);
+      return;
 
-      const path = uri.substring(FILE_URI_PREFIX.length);
-      if (!path.startsWith(ROOT_PATH)) {
-        logError(
-          `Text document path '${path}' does not begin with `
-            + `root path '${ROOT_PATH}'`
-        );
-        return;
-      }
+    case "shutdown":
+      sendResponse(msg.id, null);
+      return;
 
-      const contentChanges = msg.params.contentChanges;
-      const lastContentChange = contentChanges[contentChanges.length - 1];
-      if ("range" in lastContentChange) {
-        logError(
-          "Last content change is non-incremental: "
-            + JSON.stringify(lastContentChange)
-        );
-        return;
-      }
-
-      const sourceFilename = path.substring(ROOT_PATH.length + 1);
-      const sourceContent = lastContentChange.text;
-
-      await store(timestamp, "buffer", sourceFilename, sourceContent);
-      await requestUploadIfNecessary(timestamp);
-
-      break;
+    case "exit":
+      process.exit(0);
+      return;
 
     case "textDocument/didOpen": // No new info
     case "textDocument/didClose": // No new info
     case "textDocument/didSave": // Handled by file system watcher
-      break;
-
-    case "shutdown":
-      sendResponse(msg.id, null);
-      break;
-
-    case "exit":
-      process.exit(0);
-      break;
-
-    default:
-      break;
+      return;
   }
 }
 
@@ -460,31 +436,32 @@ async function handle(msg) {
 
 function tryUpdate() {
   child_process.exec(UPDATE_COMMAND, (error, stdout, stderr) => {
-    logInfo("Begin exec() info from update");
+    logInfo("Begin update exec() output");
     if (error) {
-      logError(`exec() error while updating: ${error}`);
+      logError(`  exec() error while updating: ${error}`);
     }
-    logInfo(`stdout: ${stdout}`);
-    logInfo(`stderr: ${stderr}`);
-    logInfo("End exec() info from update");
+    logInfo(`  stdout: ${stdout.trim()}`);
+    if (stderr) {
+      logInfo(`  stderr: ${stderr.trim()}`);
+    }
+    logInfo("End update exec() output");
   });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Main
 
-process.on('uncaughtException', function (error) {
+process.on('uncaughtException', error => {
   logError(error.stack.toString());
 });
 
 async function main() {
-    logInfo("test");
   if (ENABLED) {
     logInfo("--- Starting new Edit Mirror session ---");
     tryUpdate();
-    await listen(handle);
+    await listen(activeHandle);
   } else {
-    await listen(doNothingHandle);
+    await listen(passiveHandle);
   }
 }
 
