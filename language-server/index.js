@@ -19,35 +19,34 @@ const fspRead = util.promisify(fs.read);
 
 const VERSION = "0.1.0";
 
-const SERVER_HOSTNAME = "localhost";
-const SERVER_PORT = 4040;
+const UPDATE_COMMAND = "edit-mirror update";
 
 const UPLOAD_OPTIONS = {
   method: "POST",
-  host: SERVER_HOSTNAME,
-  port: SERVER_PORT,
+  host: "localhost",
+  port: 4040,
   path: "/upload"
 }
 
-const UPDATE_COMMAND = "edit-mirror update";
-
 const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.002;
 
+const REPO_DIR = path.normalize(__dirname + "/..");
 const PLUGIN_DIR = "___edit-mirror___";
+
+const ENABLED = fs.existsSync(PLUGIN_DIR);
+
+const USER_INFO_PATH = REPO_DIR + "/user-info.json";
 
 const LOG_DIR = PLUGIN_DIR + "/log";
 const PENDING_UPLOAD_DIR = PLUGIN_DIR + "/pending-upload";
-const INFO_DIR = PLUGIN_DIR + "/info";
-const VERSIONS_DIR = PLUGIN_DIR + "/versions";
+const METADATA_DIR = PLUGIN_DIR + "/metadata";
 
 const PENDING_UPLOAD_ARCHIVE_PATH = PENDING_UPLOAD_DIR + ".tar.gz"
 const PENDING_UPLOAD_LOG_DIR = PENDING_UPLOAD_DIR + "/log"
-const PENDING_UPLOAD_INFO_DIR = PENDING_UPLOAD_DIR + "/info"
+const PENDING_UPLOAD_METADATA_DIR = PENDING_UPLOAD_DIR + "/metadata"
 
-const ID_PATH = INFO_DIR + "/id.txt";
-const LAST_UPLOAD_REQUEST_PATH = INFO_DIR + "/last-upload-request.txt";
-const DEMOGRAPHICS_PATH = INFO_DIR + "/demographics.txt";
-const PLUGIN_LOG_PATH = INFO_DIR + "/plugin-log.txt"
+const LAST_UPLOAD_REQUEST_PATH = METADATA_DIR + "/last-upload-request.txt";
+const PLUGIN_LOG_PATH = METADATA_DIR + "/plugin-log.txt"
 
 const WATCHED_EXTENSION = ".elm";
 const WATCHED_PATHS = ["**/*.elm", "elm.json"];
@@ -59,7 +58,7 @@ const FILE_URI_PREFIX = "file://";
 // Pseudo-constants (set once in init)
 
 let ROOT_PATH = null;
-let ID = null;
+let USER_INFO = null;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers
@@ -94,20 +93,6 @@ function request(options, data) {
     }
     req.end();
   });
-}
-
-// File helpers
-
-function copyAllVisibleSync(sourceDir, targetDir) {
-  for (const file of fs.readdirSync(sourceDir)) {
-    fs.copyFileSync(`${sourceDir}/${file}`, `${targetDir}/${file}`);
-  }
-}
-
-function moveAllVisibleSync(sourceDir, targetDir) {
-  for (const file of fs.readdirSync(sourceDir)) {
-    fs.renameSync(`${sourceDir}/${file}`, `${targetDir}/${file}`);
-  }
 }
 
 // Time helpers
@@ -262,19 +247,19 @@ function upload() {
   fs.renameSync(LOG_DIR, PENDING_UPLOAD_LOG_DIR);
   fs.mkdirSync(LOG_DIR);
 
-  fs.mkdirSync(PENDING_UPLOAD_INFO_DIR);
-  fs.readdirSync(INFO_DIR).forEach(file => {
+  fs.mkdirSync(PENDING_UPLOAD_METADATA_DIR);
+  fs.readdirSync(METADATA_DIR).forEach(file => {
     fs.copyFileSync(
-      `${INFO_DIR}/${file}`,
-      `${PENDING_UPLOAD_INFO_DIR}/${file}`
+      `${METADATA_DIR}/${file}`,
+      `${PENDING_UPLOAD_METADATA_DIR}/${file}`
     );
   });
 
   const form = new FormData();
 
   form.append("client_version", VERSION);
-  form.append("client_id", ID);
   form.append("client_timestamp", timestamp);
+  form.append("user_info", JSON.stringify(USER_INFO));
 
   tar.create(
     { gzip: true
@@ -347,8 +332,38 @@ async function listen(handler) {
   }
 }
 
+async function doNothingHandle(msg) {
+  switch (msg.method) {
+    case "initialize":
+			sendResponse(msg.id, {
+        capabilities: {}
+      });
+      break;
+
+    case "shutdown":
+      sendResponse(msg.id, null);
+      break;
+
+    case "exit":
+      process.exit(0);
+      break;
+  }
+}
+
 async function handle(msg) {
   const timestamp = new Date().getTime();
+
+  // Client responses
+
+  if (
+    consentToUploadId !== null
+      && msg.id === consentToUploadId
+      && msg.result
+      && indicatesConsent(msg.result.title)
+  ) {
+    upload();
+    return;
+  }
 
   // Client requests
 
@@ -363,7 +378,7 @@ async function handle(msg) {
       }
       ROOT_PATH = rootUri.substring(FILE_URI_PREFIX.length);
 
-      ID = (await fsp.readFile(ID_PATH)).toString("utf8").trim();
+      USER_INFO = JSON.parse(await fsp.readFile(USER_INFO_PATH));
 
 			watchFiles();
 
@@ -429,17 +444,6 @@ async function handle(msg) {
     default:
       break;
   }
-
-  // Client responses
-
-  if (
-    consentToUploadId !== null
-      && msg.id === consentToUploadId
-      && msg.result
-      && indicatesConsent(msg.result.title)
-  ) {
-    upload();
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -465,9 +469,13 @@ process.on('uncaughtException', function (error) {
 });
 
 async function main() {
-  logInfo("--- Starting new Edit Mirror session ---");
-  tryUpdate();
-  await listen(handle);
+  if (ENABLED) {
+    logInfo("--- Starting new Edit Mirror session ---");
+    tryUpdate();
+    await listen(handle);
+  } else {
+    await listen(doNothingHandle);
+  }
 }
 
 main();

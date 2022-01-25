@@ -17,7 +17,7 @@ chmod 755 edit-mirror
 cd $repo_dir
 
 echo '{"id": "'$id'", "experience": "'$experience'"}' \
-  > user-data.txt
+  > user-data.json
 
 cd language-server
 npm install
