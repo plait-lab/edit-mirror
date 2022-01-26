@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-usage="Usage: $name <elm|init|language-server|uid-gen|update> [options]"
+usage="Usage: $name <elm|init|language-server|redact|uid-gen|update> [options]"
 
 dir="$(dirname $(realpath "$0"))"
 name="$(basename "$0")"
@@ -20,6 +20,9 @@ case $cmd in
     ;;
   "language-server")
     node $dir/language-server/index.js $@
+    ;;
+  "redact")
+    node $dir/redactor/index.js $@
     ;;
   "uid-gen")
     node $dir/utils/uid-gen.js $@
