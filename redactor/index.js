@@ -95,7 +95,7 @@ function redact(password, timeline) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// File IO
+// File IO (TODO)
 
 function readTimeline() {
   const filenames = ["123-Main.elm", "125-Main.elm", "126-Main.elm"];
@@ -136,6 +136,7 @@ if (!fs.readdirSync(".").includes(PLUGIN_DIR)) {
 
 process.chdir(PLUGIN_DIR);
 
+// TODO: actually use readline, not argv
 const password = process.argv[2];
 const timeline = readTimeline();
 redact(password, timeline);
