@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
 
+usage="Usage: $name <elm|init|language-server|uid-gen|update> [options]"
+
 dir="$(dirname $(realpath "$0"))"
 name="$(basename "$0")"
 cmd=$1
 
 shift
 
-usage() {
-  echo "Usage: $name <elm|init|language-server|uid-gen|update> [options]"
-}
-
 case $cmd in
   "")
-    usage
+    echo $usage
     ;;
   "elm")
     bash $dir/utils/elm.sh $@
@@ -30,8 +28,8 @@ case $cmd in
     bash $dir/utils/update.sh $@
     ;;
   *)
-    echo "Invalid command"
-    usage
+    >&2 echo "Invalid command"
+    >&2 echo $usage
     exit 1
     ;;
 esac
