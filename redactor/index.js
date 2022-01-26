@@ -12,7 +12,8 @@ const PLUGIN_DIR = "___edit-mirror___";
 
 ////////////////////////////////////////////////////////////////////////////////
 // Redaction algorithm
-//   Note: We treat strings as sequences of UTF-16 code units
+
+// Note: We treat strings as sequences of UTF-16 code units
 
 function assignIds(timeline) {
   timeline.idArrays = timeline.contents.map(c => new Array(c.length));
