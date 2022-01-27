@@ -179,7 +179,7 @@ async function requestUploadIfNecessary(currentTimestamp) {
 
 async function store(timestamp, kind, sourcePath, sourceContent) {
   const sourcePathEncoding = sourcePath.replaceAll("/", "$");
-  const filename = `${LOG_DIR}/${timestamp}-${kind}-${sourcePathEncoding}`
+  const filename = `${LOG_DIR}/${timestamp}_${kind}_${sourcePathEncoding}`
 
   await fsp.writeFile(filename, sourceContent);
 }
