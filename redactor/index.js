@@ -7,13 +7,18 @@ const readline = require("readline");
 const diff_match_patch = require("./diff_match_patch");
 const dmp = new diff_match_patch.diff_match_patch();
 
-const USAGE = "Usage: edit-mirror redact <phrase>";
+const USAGE = "Usage: edit-mirror redact";
 const PLUGIN_DIR = "___edit-mirror___";
 
 ////////////////////////////////////////////////////////////////////////////////
 // Redaction algorithm
 
 // Note: We treat strings as sequences of UTF-16 code units
+
+// Convention:
+//   - "t" as a loop variable corresponds to a timestep in the timeline,
+//   - "ci" as a loop variable corresponds to a character index within a
+//     timestep
 
 function assignIds(timeline) {
   timeline.idArrays = timeline.contents.map(c => new Array(c.length));
@@ -115,18 +120,15 @@ function writeTimeline(timeline) {
 ////////////////////////////////////////////////////////////////////////////////
 // Main
 
-if (process.argv.length === 2) {
+if (process.argv.length !== 2) {
+  console.error("Error: Incorrect number of arguments");
   console.log(USAGE);
-  process.exit(0);
-}
-
-if (process.argv.length > 3) {
-  console.error("Error: Too many arguments");
-  console.error(USAGE);
   process.exit(1);
 }
 
-if (!fs.readdirSync(".").includes(PLUGIN_DIR)) {
+try {
+  process.chdir(PLUGIN_DIR);
+} catch (_) {
   console.error(
     `Error: edit-mirror redact must be executed in a directory containing the `
       + `___edit-mirror___ directory`
@@ -134,10 +136,33 @@ if (!fs.readdirSync(".").includes(PLUGIN_DIR)) {
   process.exit(1);
 }
 
-process.chdir(PLUGIN_DIR);
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
-// TODO: actually use readline, not argv
-const password = process.argv[2];
-const timeline = readTimeline();
-redact(password, timeline);
-writeTimeline(timeline);
+function quitEarly() {
+  console.log("Exiting without redacting anything");
+  rl.close();
+  process.exit(0);
+}
+
+rl.question("Phrase to redact (blank to cancel): ", password => {
+  if (!password) {
+    quitEarly();
+  }
+
+  rl.question(
+    "Are you sure you want to redact that phrase? (y/N) ",
+    confirmation => {
+      if (confirmation.toLowerCase() !== "y") {
+        quitEarly();
+      }
+
+      const timeline = readTimeline();
+      redact(password, timeline);
+      writeTimeline(timeline);
+      rl.close();
+    }
+  );
+});
