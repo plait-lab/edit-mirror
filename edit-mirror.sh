@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-usage="Usage: $name <elm|init|language-server|redact|uid-gen|update> [options]"
+usage="Usage: $name <check|elm|id|init|language-server|redact|uid-gen|update> [options]"
 
 dir="$(dirname $(realpath "$0"))"
 name="$(basename "$0")"
@@ -12,8 +12,14 @@ case $cmd in
   "")
     echo $usage
     ;;
+  "check")
+    bash $dir/utils/check.sh $@
+    ;;
   "elm")
     bash $dir/utils/elm.sh $@
+    ;;
+  "id")
+    node $dir/utils/id.js $@
     ;;
   "init")
     bash $dir/utils/init.sh $@
