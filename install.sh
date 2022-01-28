@@ -1,5 +1,3 @@
-# TODO confirm consent form
-
 echo 'Have you signed and returned the consent form for this study?'
 select consent in 'Yes' 'No'; do
   case $consent in
