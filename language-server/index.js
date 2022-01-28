@@ -28,7 +28,7 @@ const UPLOAD_OPTIONS = {
   path: "/upload"
 }
 
-const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.02;
+const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.01;
 
 const REPO_DIR = path.normalize(__dirname + "/..");
 const PLUGIN_DIR = "___edit-mirror___";
@@ -225,6 +225,15 @@ async function watchFiles() {
 ////////////////////////////////////////////////////////////////////////////////
 // Uploader
 
+function revertUpload() {
+  fs.readdirSync(`${PENDING_UPLOAD_LOG_DIR}`).forEach(file => {
+    fs.renameSync(
+      `${PENDING_UPLOAD_LOG_DIR}/${file}`,
+      `${LOG_DIR}/${file}`
+    );
+  });
+}
+
 function upload() {
   const timestamp = new Date().getTime();
 
@@ -260,12 +269,7 @@ function upload() {
 
       form.submit(UPLOAD_OPTIONS, (err, res) => {
         if (err) {
-          fs.readdirSync(`${PENDING_UPLOAD_LOG_DIR}`).forEach(file => {
-            fs.renameSync(
-              `${PENDING_UPLOAD_LOG_DIR}/${file}`,
-              `${LOG_DIR}/${file}`
-            );
-          });
+          revertUpload();
           logError(`Upload failed: ${err}`);
         } else {
           switch (res.statusCode) {
@@ -275,6 +279,7 @@ function upload() {
               break;
 
             default: // Error
+              revertUpload();
               res.setEncoding("utf8");
               let rawData = "";
               res.on("data", chunk => { rawData += chunk; });
@@ -346,7 +351,9 @@ async function initialize(msg, timestamp) {
   ROOT_PATH = rootUri.substring(FILE_URI_PREFIX.length);
 
   USER_INFO = JSON.parse(await fsp.readFile(USER_INFO_PATH));
-  PROJECT_ID = await fsp.readFile(PROJECT_ID_PATH);
+  PROJECT_ID =
+    (await fsp.readFile(PROJECT_ID_PATH, { encoding: "utf8" }))
+    .trim();
 
   await watchFiles();
 
