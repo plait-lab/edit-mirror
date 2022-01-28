@@ -165,13 +165,26 @@ function indicatesConsent(option) {
 }
 
 async function requestUploadIfNecessary(currentTimestamp) {
-  const lastRequested = parseInt(await fsp.readFile(LAST_UPLOAD_REQUEST_PATH));
-  const hoursElapsed = millisToHours(currentTimestamp - lastRequested);
-  if (hoursElapsed > UPLOAD_REQUEST_THRESHOLD_HOURS) {
-    logInfo("Requesting upload after " + hoursElapsed.toFixed(2) + " hours");
-    await fsp.writeFile(LAST_UPLOAD_REQUEST_PATH, currentTimestamp.toString());
-    requestUpload();
+  const lastRequested =
+    parseInt(await fsp.readFile(LAST_UPLOAD_REQUEST_PATH));
+
+  const hoursElapsed =
+    millisToHours(currentTimestamp - lastRequested);
+
+  if (hoursElapsed < UPLOAD_REQUEST_THRESHOLD_HOURS) {
+    return;
   }
+
+  const visibleLogFiles =
+    (await fsp.readdir(LOG_DIR)).filter(f => f[0] !== ".");
+
+  if (visibleLogFiles.length === 0) {
+    return;
+  }
+
+  logInfo("Requesting upload after " + hoursElapsed.toFixed(2) + " hours");
+  await fsp.writeFile(LAST_UPLOAD_REQUEST_PATH, currentTimestamp.toString());
+  requestUpload();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -252,6 +265,10 @@ function upload() {
 
   const form = new FormData();
 
+  logInfo(VERSION);
+  logInfo(timestamp);
+  logInfo(JSON.stringify(USER_INFO));
+  logInfo(PROJECT_ID);
   form.append("client_version", VERSION);
   form.append("client_timestamp", timestamp);
   form.append("user_info", JSON.stringify(USER_INFO));
