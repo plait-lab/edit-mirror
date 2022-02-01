@@ -1,6 +1,6 @@
 # TODO switch to https
 eid=$(edit-mirror id)
-server_result=$(curl -Ssq "http://kaofang.cs.berkeley.edu/check?id=$eid")
+server_result=$(curl -Ssq "https://kaofang.cs.berkeley.edu/check?id=$eid")
 if [[ $? -eq 0 ]]; then
   echo "[SUCCESS] Sucessfully connected to the Edit Mirror Backend"
 else
