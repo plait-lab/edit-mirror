@@ -6,7 +6,6 @@ const util = require("util");
 const path = require("path");
 const fs = require("fs");
 const fsp = require("fs/promises");
-const http = require("http"); // TODO: upgrade to https
 
 const chokidar = require("chokidar");
 const FormData = require("form-data");
@@ -23,8 +22,8 @@ const UPDATE_COMMAND = "edit-mirror update";
 
 const UPLOAD_OPTIONS = {
   method: "POST",
+  protocol: "https:",
   host: "kaofang.cs.berkeley.edu",
-  port: 80,
   path: "/upload"
 }
 
@@ -282,7 +281,8 @@ function upload() {
     [ "." ],
     _ => {
       form.append("data_tarball",
-        fs.createReadStream(PENDING_UPLOAD_ARCHIVE_PATH));
+        fs.createReadStream(PENDING_UPLOAD_ARCHIVE_PATH)
+      );
 
       form.submit(UPLOAD_OPTIONS, (err, res) => {
         if (err) {
