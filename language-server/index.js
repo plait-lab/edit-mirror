@@ -23,8 +23,8 @@ const UPDATE_COMMAND = "edit-mirror update";
 
 const UPLOAD_OPTIONS = {
   method: "POST",
-  host: "localhost",
-  port: 4040,
+  host: "kaofang.cs.berkeley.edu",
+  port: 80,
   path: "/upload"
 }
 
