@@ -1,4 +1,3 @@
-# TODO switch to https
 eid=$(edit-mirror id)
 server_result=$(curl -Ssq "https://kaofang.cs.berkeley.edu/check?id=$eid")
 if [[ $? -eq 0 ]]; then
