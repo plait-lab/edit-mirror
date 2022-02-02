@@ -152,15 +152,26 @@ function logError(text) {
 
 let consentToUploadId = null;
 
+const promptText =
+  "[EDIT MIRROR] "
+    + "If you've accidentally typed sensitive information since the last Edit "
+    + "Mirror upload, have you used the 'edit-mirror redact' command?
+    + "And, if so, do you consent to uploading all edit history for this "
+    + "project since the last upload?";
+
+const yesOption =
+  "Yes, I've redacted any sensitive information and consent to upload";
+
+const noOption =
+  "No";
+
 function requestUpload() {
-  consentToUploadId = sendPromptRequest(
-    "Do you consent to uploading all edit history since your last upload?",
-    ["Yes", "No"]
-  );
+  consentToUploadId =
+    sendPromptRequest(promptText, [yesOption, noOption]);
 }
 
 function indicatesConsent(option) {
-  return option === "Yes";
+  return option === yesOption;
 }
 
 async function requestUploadIfNecessary(currentTimestamp) {
