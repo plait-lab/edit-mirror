@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-usage="Usage: $name <check|elm|id|init|language-server|redact|uid-gen|update> [options]"
+usage="Usage: $name <check|elm|help|id|init|language-server|redact|uid-gen|update> [options]"
+help="Please see https://github.com/justinlubin/edit-mirror for documentation!"
+# TODO update url^
 
 dir="$(dirname $(realpath "$0"))"
 name="$(basename "$0")"
@@ -11,12 +13,17 @@ shift
 case $cmd in
   "")
     echo $usage
+    echo $help
     ;;
   "check")
     bash $dir/utils/check.sh $@
     ;;
   "elm")
     bash $dir/utils/elm.sh $@
+    ;;
+  "help")
+    echo $usage
+    echo $help
     ;;
   "id")
     node $dir/utils/id.js $@
