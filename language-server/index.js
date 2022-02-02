@@ -155,7 +155,7 @@ let consentToUploadId = null;
 const promptText =
   "[EDIT MIRROR] "
     + "If you've accidentally typed sensitive information since the last Edit "
-    + "Mirror upload, have you used the 'edit-mirror redact' command?
+    + "Mirror upload, have you used the 'edit-mirror redact' command?"
     + "And, if so, do you consent to uploading all edit history for this "
     + "project since the last upload?";
 
