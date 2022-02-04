@@ -15,9 +15,8 @@ installation_dir=${dir:-~/bin}
 mkdir -p $installation_dir
 cd $installation_dir
 
-# TODO update git URL
 repo_dir='edit-mirror-repo'
-git clone git@github.com:justinlubin/edit-mirror.git $repo_dir
+git clone https://github.com/plait-lab/edit-mirror.git $repo_dir
 
 ln -s $repo_dir/edit-mirror.sh edit-mirror
 chmod 755 edit-mirror

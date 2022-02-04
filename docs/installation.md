@@ -69,7 +69,7 @@ Two quick notes about the installation script:
 An easy way to run the installation script is to execute the following command
 in your terminal:
 
-    curl --proto '=https' -sSfL TODO | sh
+    curl --proto '=https' -sSfL https://raw.githubusercontent.com/plait-lab/edit-mirror/main/utils/install.sh | sh
 
 For information about how to use Edit Mirror utilities (including the automated
 redactor), please refer to our [Edit Mirror documentation](TODO) or simply type
