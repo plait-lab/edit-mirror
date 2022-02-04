@@ -53,8 +53,9 @@ editor-specific configurations you made and plugins you installed.
 
 ## Part 1: Installing the Edit Mirror utility suite
 
-For this step, you will run our [Edit Mirror language server installation
-script](TODO), which will ask you a couple basic configuration and demographic
+For this step, you will run our
+[Edit Mirror language server installation script](../utils/install.sh),
+which will ask you a couple basic configuration and demographic
 questions.
 
 Two quick notes about the installation script:
