@@ -36,16 +36,16 @@ below):
    project of choice.
 4. Replace any references to the `elm` binary in your build scripts with a
    lightweight wrapper around the `elm` binary we wrote that is included in the
-  Edit Mirror utility suite.
+   Edit Mirror utility suite.
 
 This process will result in the following files being created on your machine:
 
 - In a directory of your choice on your `PATH` (default `~/bin`):
   - `edit-mirror` (the Edit Mirror utility suite program)
-	- `edit-mirror-repo` (a directory containing supporting files for the Edit
+  - `edit-mirror-repo` (a directory containing supporting files for the Edit
     Mirror utility suite)
 - In the project root of your open source programming project of choice:
-	- `___edit-mirror___` (a directory storing Edit Mirror data and metadata,
+  - `___edit-mirror___` (a directory storing Edit Mirror data and metadata,
     including unuploaded log data)
 
 To uninstall Edit Mirror, simply remove these files as well as any
@@ -59,11 +59,11 @@ questions.
 
 Two quick notes about the installation script:
 
-*   Please ensure that the installation directory you choose is on your `PATH`.
-*   The script will ask you for your Edit Mirror ID; this should have been
-    provided to you in an email from Justin Lubin
-		[justinlubin@berkeley.edu](mailto:////justinlubin@berkeley.edu).
-		If not, please reach out to Justin via email.
+- Please ensure that the installation directory you choose is on your `PATH`.
+- The script will ask you for your Edit Mirror ID; this should have been
+  provided to you in an email from Justin Lubin
+  [justinlubin@berkeley.edu](mailto:////justinlubin@berkeley.edu).
+  If not, please reach out to Justin via email.
 
 An easy way to run the installation script is to execute the following command
 in your terminal:
@@ -84,8 +84,8 @@ supports the LSP to be an Edit Mirror language client:
 
 1. Install an LSP plugin for your editor (if you haven't already).
 2. Configure the LSP plugin to use the Edit Mirror language server for Elm
-	 (`.elm`) files. Since the Edit mirror language server should already be on
-	 your `PATH`, you should be able to simply tell your LSP plugin to run the
+   (`.elm`) files. Since the Edit mirror language server should already be on
+   your `PATH`, you should be able to simply tell your LSP plugin to run the
    command `edit-mirror-lsp-server`.
 
 We've provided some tips for a few editors below, but the two steps listed
@@ -115,7 +115,7 @@ servers at the same time.
 Please perform the following steps:
 
 1. In your terminal, bavigate to the project root of the open source
-	 programming project that you wish to have Edit Mirror track. (The project
+   programming project that you wish to have Edit Mirror track. (The project
    root is likely the directory containing your `elm.json` file!)
 2. Run the following command:
 
