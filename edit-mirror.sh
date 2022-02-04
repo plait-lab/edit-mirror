@@ -1,19 +1,30 @@
 #!/usr/bin/env bash
 
-usage="Usage: $name <check|elm|help|id|init|language-server|redact|uid-gen|update> [options]"
-help="Please see https://github.com/justinlubin/edit-mirror for documentation!"
-# TODO update url^
-
 dir="$(dirname $(realpath "$0"))"
 name="$(basename "$0")"
 cmd=$1
 
 shift
 
+usage() {
+  echo "Usage: $name <command>"
+  echo
+  echo "Most useful commands:"
+  echo "  elm       Wraps the 'elm' command to track compilations"
+  echo "  help      Shows this help information"
+  echo "  init      Initializes Edit Mirror for a project (use in project root)"
+  echo "  redact    Redacts sensitive information in Edit Mirror logs (use in project root)"
+  echo
+  echo "Other commands: check, id, language-server, uid-gen, update"
+  echo
+  echo "Please see https://github.com/plait-lab/edit-mirror for more documentation!"
+}
+
+# TODO update url^
+
 case $cmd in
   "")
-    echo $usage
-    echo $help
+    usage
     ;;
   "check")
     bash $dir/utils/check.sh $@
@@ -22,8 +33,7 @@ case $cmd in
     bash $dir/utils/elm.sh $@
     ;;
   "help")
-    echo $usage
-    echo $help
+    usage
     ;;
   "id")
     node $dir/utils/id.js $@
@@ -44,8 +54,9 @@ case $cmd in
     bash $dir/utils/update.sh $@
     ;;
   *)
-    >&2 echo "Invalid command"
-    >&2 echo $usage
+    echo "Invalid command"
+    echo
+    usage
     exit 1
     ;;
 esac
