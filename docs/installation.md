@@ -8,6 +8,9 @@ do not hesitate to reach out to me, Justin Lubin, at
 
 ## Dependencies
 
+Before going through these installation instructions, please make sure you have
+the following programs installed:
+
 - `bash`
 - `git`
 - `node`
