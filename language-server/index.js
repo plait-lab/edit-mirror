@@ -153,14 +153,14 @@ function logError(text) {
 let consentToUploadId = null;
 
 const promptText =
-  "[Edit Mirror] "
-    + "If you've accidentally typed sensitive information since the last Edit "
-    + "Mirror upload, have you used the `edit-mirror redact` command? "
+  "[Edit Mirror Upload Request] "
+    + "Have you used the `edit-mirror redact` command (if necessary) to redact "
+    + "any sensitive information?"
     + "And, if so, do you consent to uploading all edit history for this "
     + "project since the last upload?";
 
 const yesOption =
-  "Yes, I've redacted any sensitive information and consent to upload";
+  "Yes, upload";
 
 const noOption =
   "No";
