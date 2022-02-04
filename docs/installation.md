@@ -6,6 +6,13 @@ If you have any questions about the following installation instructions, please
 do not hesitate to reach out to me, Justin Lubin, at
 [justinlubin@berkeley.edu](mailto:////justinlubin@berkeley.edu)!
 
+## Dependencies
+
+- `bash`
+- `git`
+- `node`
+- `npm`
+
 ## Overview
 
 Participation in this study entails using an editor plugin we made called _Edit
