@@ -72,7 +72,7 @@ in your terminal.
 At a high level, here is what you need to do to configure any editor that
 supports the LSP to be an Edit Mirror language client:
 
-1. Install an LSP plugin for your editor (if you haven’t already).
+1. Install an LSP plugin for your editor (if you haven't already).
 2. Configure the LSP plugin to use the Edit Mirror language server for Elm
 	 (`.elm`) files. Since the Edit mirror language server should already be on
 	 your `PATH`, you should be able to simply tell your LSP plugin to run the
@@ -122,13 +122,13 @@ in your build scripts or workflow with the command `edit-mirror elm`.
 For example, instead of running `elm make` to build your project, please run
 `edit-mirror elm make`.
 
-If you haven’t already, we recommend wrapping your build command in a
+If you haven't already, we recommend wrapping your build command in a
 `Makefile` or `build.sh` file so you can keep your build command short and not
 worry about needing to use our `elm` wrapper.
 
 ---
 
-And that’s it, you’ve successfully installed Edit Mirror! Thank you once again
+And that's it, you've successfully installed Edit Mirror! Thank you once again
 for your participation in this study, and happy coding!
 
 — Justin Lubin
