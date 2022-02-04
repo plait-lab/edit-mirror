@@ -67,7 +67,7 @@ redactor), please refer to our [Edit Mirror documentation](TODO) or simply type
 
 in your terminal.
 
-# Part 2: Configuring your editor to be a language client
+## Part 2: Configuring your editor to be a language client
 
 At a high level, here is what you need to do to configure any editor that
 supports the LSP to be an Edit Mirror language client:
@@ -100,7 +100,7 @@ If you are already using LanguageClient-neovim for Elm language support, we
 recommend installing a second language client so that you can run both language
 servers at the same time.
 
-# Part 3: Initializing Edit Mirror for your programming project
+## Part 3: Initializing Edit Mirror for your programming project
 
 Please perform the following steps:
 
@@ -114,7 +114,7 @@ Please perform the following steps:
 If you would like to use Edit Mirror with multiple open source programming
 projects, please feel free to repeat this step for the other project roots!
 
-# Part 4: Using the Edit Mirror `elm` wrapper
+## Part 4: Using the Edit Mirror `elm` wrapper
 
 For the final step of installation, please replace any use of the `elm` binary
 in your build scripts or workflow with the command `edit-mirror elm`.
