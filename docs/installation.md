@@ -71,8 +71,10 @@ in your terminal:
 
     curl --proto '=https' -sSfL https://raw.githubusercontent.com/plait-lab/edit-mirror/main/utils/install.sh | sh
 
-For information about how to use Edit Mirror utilities (including the automated
-redactor), please refer to our [Edit Mirror documentation](TODO) or simply type
+For information about how to use the Edit Mirror utilities (including the
+automated redactor), please refer to our
+[Edit Mirror command-line interface documentation](cli.md)
+or simply type
 
     edit-mirror
 
