@@ -110,6 +110,10 @@ In your `vimrc` file, you would then use the following configuration:
       \ 'elm': ['edit-mirror-lsp-server'],
       \ }
 
+    let g:LanguageClient_rootMarkers = {
+      \ 'elm': ['elm.json'],
+      \ }
+
 If you are already using LanguageClient-neovim for Elm language support, we
 recommend installing a second language client so that you can run both language
 servers at the same time.
