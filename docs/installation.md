@@ -72,13 +72,14 @@ in your terminal:
     curl --proto '=https' -sSfL https://raw.githubusercontent.com/plait-lab/edit-mirror/main/utils/install.sh | sh
 
 For information about how to use the Edit Mirror utilities (including the
-automated redactor), please refer to our
-[Edit Mirror command-line interface documentation](./)
-or simply type
+automated redactor), please refer to our [documentation](./) or simply type
 
     edit-mirror
 
 in your terminal.
+
+**We strongly recommend that you review the
+[documentation for our automated redactor tool](./redactor.md).**
 
 ## Part 2: Configuring your editor to be a language client
 
