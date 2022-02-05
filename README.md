@@ -6,8 +6,9 @@ time.
 We are currently running a research study using Edit Mirror to gather
 fine-grained information about programmers' behavior.
 
-If you're interested in participating, **please take a look at our
-[e-flyer](TODO)!** We welcome new participants of all experience levels.
+If you're interested in participating,
+**please take a look at our [e-flyer](https://plait-lab.org/elm)!**
+We welcome new participants of all experience levels.
 
 ## Project structure
 
