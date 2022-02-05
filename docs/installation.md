@@ -73,7 +73,7 @@ in your terminal:
 
 For information about how to use the Edit Mirror utilities (including the
 automated redactor), please refer to our
-[Edit Mirror command-line interface documentation](cli.md)
+[Edit Mirror command-line interface documentation](./)
 or simply type
 
     edit-mirror
