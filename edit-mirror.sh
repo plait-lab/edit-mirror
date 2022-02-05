@@ -17,10 +17,8 @@ usage() {
   echo
   echo "Other commands: check, id, language-server, uid-gen, update"
   echo
-  echo "Please see https://github.com/plait-lab/edit-mirror for more documentation!"
+  echo "Please see https://github.com/plait-lab/edit-mirror/tree/main/docs for more documentation!"
 }
-
-# TODO update url^
 
 case $cmd in
   "")
