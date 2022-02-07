@@ -122,7 +122,7 @@ servers at the same time.
 
 Please perform the following steps:
 
-1. In your terminal, bavigate to the project root of the open source
+1. In your terminal, navigate to the project root of the open source
    programming project that you wish to have Edit Mirror track. (The project
    root is likely the directory containing your `elm.json` file!)
 2. Run the following command:
