@@ -100,6 +100,8 @@ above should apply to any editor that supports the LSP!
 For Visual Studio Code, all you need to do is install the
 [Edit Mirror language client plugin](https://marketplace.visualstudio.com/items?itemName=plait-lab.edit-mirror).
 
+TODO: Need to install Elm plugin?
+
 ### Vim
 
 For Vim, we strongly recommend using

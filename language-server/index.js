@@ -27,7 +27,7 @@ const UPLOAD_OPTIONS = {
   path: "/upload"
 }
 
-const UPLOAD_REQUEST_THRESHOLD_HOURS = 24 * 3;
+const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.01; // 24 * 3;
 
 const REPO_DIR = path.normalize(__dirname + "/..");
 const PLUGIN_DIR = "___edit-mirror___";
@@ -154,10 +154,10 @@ let consentToUploadId = null;
 
 const promptText =
   "[Edit Mirror Upload Request] "
-    + "Have you used the `edit-mirror redact` command (if necessary) to redact"
-    + " any sensitive information?"
-    + "And, if so, do you consent to continuing participation in this study and"
-    + " uploading all edit history for this project since the last upload?";
+    + "Have you used the `edit-mirror redact` command (if necessary) to redact "
+    + "any sensitive information? "
+    + "And, if so, do you consent to continuing participation in this study "
+    + "and uploading all edit history for this project since the last upload?";
 
 const yesOption =
   "Yes, upload";
