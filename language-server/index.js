@@ -253,7 +253,6 @@ async function watchFiles() {
       "watched.json",
       JSON.stringify(watched)
     );
-    console.log(JSON.stringify(watched));
   });
 }
 
