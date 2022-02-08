@@ -405,8 +405,6 @@ async function initialize(msg, timestamp) {
 
   logInfo("Initialized!");
 
-  // TODO: also log list of all files for sync purposes?
-
   await requestUploadIfNecessary(timestamp);
 }
 
