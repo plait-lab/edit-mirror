@@ -21,11 +21,11 @@ entered the sensitive information and run the command
 
     edit-mirror redact
 
-with no arguments. Then simply type in the phrase to redact at the prompt that
-appears.
+with no further arguments. Then simply type in the phrase to redact at the
+prompt that appears.
 
-Be sure not to enter the phrase as an argument to this program. If you do, it
-will be stored in your shell's command history.
+**Be sure not to enter the sensitive phrase as an argument to this program.**
+If you do, it will be stored in your shell's command history.
 
 ## Will this really remove all occurrences of my passphrase?
 
