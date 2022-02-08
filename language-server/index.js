@@ -272,6 +272,8 @@ function revertUpload() {
 function upload() {
   const timestamp = getCurrentTimestamp();
 
+  logInfo("Attempting upload...");
+
   fs.mkdirSync(PENDING_UPLOAD_DIR);
 
   fs.renameSync(LOG_DIR, PENDING_UPLOAD_LOG_DIR);
@@ -287,10 +289,6 @@ function upload() {
 
   const form = new FormData();
 
-  logInfo(VERSION);
-  logInfo(timestamp);
-  logInfo(JSON.stringify(USER_INFO));
-  logInfo(PROJECT_ID);
   form.append("client_version", VERSION);
   form.append("client_timestamp", timestamp);
   form.append("user_info", JSON.stringify(USER_INFO));
