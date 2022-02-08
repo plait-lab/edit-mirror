@@ -30,7 +30,7 @@ If you do, it will be stored in your shell's command history.
 ## Will this really remove all occurrences of my passphrase?
 
 **Short answer:** In almost all cases, the answer is yes, but it is always good
-to check the `___edit-mirror/log` directory to be sure.
+to check the `___edit-mirror___/log` directory to be sure.
 
 **Long answer:** We do not naïvely scrub all occurrences of the sensitive phrase
 from the logs. Consider the situation where your phrase is `codeword` and your
