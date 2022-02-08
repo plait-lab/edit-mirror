@@ -104,9 +104,19 @@ TODO: Need to install Elm plugin?
 
 ### Vim
 
-For Vim, we strongly recommend using
-[LanguageClient-neovim](https://github.com/autozimu/LanguageClient-neovim).
-In your `vimrc` file, you would then use the following configuration:
+For Vim, we strongly recommend using the
+[LanguageClient-neovim](https://github.com/autozimu/LanguageClient-neovim)
+language client. You can install `LanguageClient-neovim` with the
+[`vim-plug`](https://github.com/junegunn/vim-plug) package manager by including
+the following configuration in your `vimrc` file:
+
+    Plug 'autozimu/LanguageClient-neovim', {
+      \ 'branch': 'next',
+      \ 'do': 'bash install.sh',
+      \ }
+
+
+Then, add the following configuration to your `vimrc` file:
 
     let g:LanguageClient_serverCommands = {
       \ 'elm': ['edit-mirror-lsp-server'],
@@ -116,9 +126,33 @@ In your `vimrc` file, you would then use the following configuration:
       \ 'elm': ['elm.json'],
       \ }
 
-If you are already using LanguageClient-neovim for Elm language support, we
+If you are already using `LanguageClient-neovim` for Elm language support, we
 recommend installing a second language client so that you can run both language
 servers at the same time.
+
+### Emacs
+
+For Emacs, we recommend using the
+[`lsp-mode`](https://emacs-lsp.github.io)
+language client.  You can install `lsp-mode` by typing `M-x package-install`,
+hitting enter, then typing `lsp-mode`.
+
+Additionally, if you don't already have it installed, you will need to install
+[`elm-mode`](https://github.com/jcollard/elm-mode)
+by typing `M-x package-install` then `elm-mode`.
+
+Finally, enter the following in your Emacs configuration file (either `~/.emacs`
+or `~/.emacs/init.el`):
+
+    (require 'lsp-mode)
+    (with-eval-after-load 'lsp-mode
+      (lsp-register-client
+        (make-lsp-client
+          :new-connection (lsp-stdio-connection '("edit-mirror" "language-server"))
+          :major-modes '(elm-mode)
+          :server-id 'edit-mirror
+          :priority 10)))
+    (add-hook 'elm-mode-hook #'lsp)
 
 ## Part 3: Initializing Edit Mirror for your programming project
 
