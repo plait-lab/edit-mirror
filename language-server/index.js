@@ -66,6 +66,10 @@ let PROJECT_ID = null;
 
 // Time helpers
 
+function getCurrentTimestamp() {
+  return new Date().getTime();
+}
+
 function millisToHours(millis) {
   return millis / 3_600_000;
 }
@@ -134,7 +138,7 @@ function sendPromptRequest(message, options) {
 const logStream = fs.createWriteStream(PLUGIN_LOG_PATH, { flags: "a" });
 
 function log(kind, text) {
-  const timestamp = new Date().getTime();
+  const timestamp = getCurrentTimestamp();
   const prefix = `[${kind}]`.padEnd(10);
   logStream.write(`${timestamp}: ${prefix}: ${text}\n`);
 }
@@ -216,7 +220,7 @@ function watchHandler(kind) {
     if (!path.endsWith(WATCHED_EXTENSION)) {
       return;
     }
-    const timestamp = new Date().getTime();
+    const timestamp = getCurrentTimestamp();
     const content = kind === "unlink" ? "" : await fsp.readFile(path);
     await store(timestamp, "watched-" + kind, path, content);
   });
@@ -236,12 +240,20 @@ async function watchFiles() {
 
   watcher.on("ready", async () => {
     const initHandler = watchHandler("init");
-    for (const [dir, baseNames] of Object.entries(watcher.getWatched())) {
+    const watched = watcher.getWatched();
+    for (const [dir, baseNames] of Object.entries(watched)) {
       for (const baseName of baseNames) {
         const path = dir === "." ? baseName : `${dir}/${baseName}`;
         await initHandler(path);
       }
     }
+    store(
+      getCurrentTimestamp(),
+      "dirlist",
+      "watched.json",
+      JSON.stringify(watched)
+    );
+    console.log(JSON.stringify(watched));
   });
 }
 
@@ -258,7 +270,7 @@ function revertUpload() {
 }
 
 function upload() {
-  const timestamp = new Date().getTime();
+  const timestamp = getCurrentTimestamp();
 
   fs.mkdirSync(PENDING_UPLOAD_DIR);
 
@@ -432,7 +444,7 @@ async function textDocumentDidChange(msg, timestamp) {
 }
 
 async function activeHandle(msg) {
-  const timestamp = new Date().getTime();
+  const timestamp = getCurrentTimestamp();
 
   // Client responses
 

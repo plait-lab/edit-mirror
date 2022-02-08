@@ -9,9 +9,9 @@ logdir="___edit-mirror___/log"
 
 if [[ -f "$logdir" && "$1" == "make" ]]; then
   elm "$@" --report=json \
-    1> $logdir/$timestamp-compile-stdout \
-    2> $logdir/$timestamp-compile-stderr
-  echo $? > $logdir/$timestamp-compile-exitcode
+    1> $logdir/${timestamp}_compile_stdout.json \
+    2> $logdir/${timestamp}_compile_stderr.json
+  echo $? > $logdir/${timestamp}_compile_exitcode.json
 fi
 
 exit $code
