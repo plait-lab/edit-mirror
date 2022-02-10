@@ -1,4 +1,4 @@
-# [UNDER CONSTRUCTION] Edit Mirror
+# Edit Mirror
 
 Edit Mirror is a suite of tools to log Elm programmers' edits to their code over
 time.
