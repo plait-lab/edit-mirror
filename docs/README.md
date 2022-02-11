@@ -6,6 +6,6 @@
 - `installation.md`: Instructions how to install Edit Mirror
 - `redactor.md`: Instructions how to use the Edit Mirror redactor
 
-You can also look at the `edit-mirror` usage documentation in its
+You can also take a look at the `edit-mirror` usage documentation by viewing its
 [source code](../edit-mirror.sh) or by running the `edit-mirror` command in your
-terminal once it is installed.
+terminal once it's installed.
