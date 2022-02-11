@@ -8,4 +8,4 @@
 
 You can also look at the `edit-mirror` usage documentation in its
 [source code](../edit-mirror.sh) or by running the `edit-mirror` command in your
-terminal.
+terminal once it is installed.
