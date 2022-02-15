@@ -27,7 +27,7 @@ const UPLOAD_OPTIONS = {
   path: "/upload"
 }
 
-const UPLOAD_REQUEST_THRESHOLD_HOURS = 0.01; // 24 * 3;
+const UPLOAD_REQUEST_THRESHOLD_HOURS = 24 * 1;
 
 const REPO_DIR = path.normalize(__dirname + "/..");
 const PLUGIN_DIR = "___edit-mirror___";
