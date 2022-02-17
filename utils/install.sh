@@ -28,3 +28,5 @@ echo '{"id": "'$id'", "experience": "'$experience'"}' \
 
 cd language-server
 npm install
+
+echo "Edit Mirror installation complete!"

@@ -65,8 +65,8 @@ Two quick notes about the installation script:
   [justinlubin@berkeley.edu](mailto:////justinlubin@berkeley.edu).
   If not, please reach out to Justin via email.
 
-An easy way to run the installation script is to execute the following command
-in your terminal:
+Assuming you use a `bash`-like shell, An easy way to run the installation script
+is to execute the following command in your terminal:
 
     bash <(curl --proto '=https' -sSfL https://raw.githubusercontent.com/plait-lab/edit-mirror/main/utils/install.sh)
 
@@ -75,7 +75,7 @@ automated redactor), please refer to our [documentation](./) or simply type
 
     edit-mirror
 
-in your terminal.
+in your terminal once installation has completed.
 
 **We strongly recommend that you review the
 [documentation for our automated redactor tool](./redactor.md).**
