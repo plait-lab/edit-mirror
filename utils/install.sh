@@ -30,6 +30,9 @@ cd language-server
 npm install
 
 echo
-echo '+------------------------------------------------------+'
-echo '| Edit Mirror installation has successfully completed! |'
-echo '+------------------------------------------------------+'
+echo '+--------------------------------------------------------------+'
+echo '| Initial Edit Mirror installation has successfully completed! |'
+echo '+--------------------------------------------------------------+'
+echo
+echo 'Please be sure to continue configuration according to'
+echo 'https://github.com/plait-lab/edit-mirror/blob/main/docs/installation.md'
