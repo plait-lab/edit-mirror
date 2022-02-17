@@ -30,5 +30,6 @@ cd language-server
 npm install
 
 echo
-echo "Edit Mirror installation has successfully completed!"
-echo
+echo '+------------------------------------------------------+'
+echo '| Edit Mirror installation has successfully completed! |'
+echo '+------------------------------------------------------+'
