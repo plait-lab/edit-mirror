@@ -60,6 +60,11 @@ questions.
 Two quick notes about the installation script:
 
 - Please ensure that the installation directory you choose is on your `PATH`.
+    - The default installation directory is `~/bin` (the `bin` folder in your
+      _home_ directory, not the root of your file system). To add this directory
+      to your path in a `bash`-like shell, add the line
+      `export PATH=~/bin:$PATH` to your shell's configuration file (such as
+      `~/.bashrc` or `~/.zshrc`).
 - The script will ask you for your Edit Mirror ID; this should have been
   provided to you in an email from Justin Lubin
   [justinlubin@berkeley.edu](mailto:////justinlubin@berkeley.edu).
