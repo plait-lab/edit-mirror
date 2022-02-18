@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-dir="$(dirname $(realpath "$0"))"
+dir="$(dirname "$0")/edit-mirror-repo"
 name="$(basename "$0")"
 cmd=$1
 
