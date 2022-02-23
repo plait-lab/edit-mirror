@@ -175,7 +175,8 @@ feel free to repeat this step for the other project roots.
 
 For the final step of installation, please replace any use of the `elm` binary
 in your build scripts or workflow for your chosen project with the command
-`edit-mirror elm`.
+`edit-mirror elm`. Also, **please make sure that you run this command from your
+project root!**
 
 For example, instead of running `elm make` to build your project, please run
 `edit-mirror elm make`.
