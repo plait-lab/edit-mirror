@@ -7,7 +7,7 @@ code=$?
 
 logdir="___edit-mirror___/log"
 
-if [[ -f "$logdir" && "$1" == "make" ]]; then
+if [[ -d "$logdir" && "$1" == "make" ]]; then
   elm "$@" --report=json \
     1> $logdir/${timestamp}_compile_stdout.json \
     2> $logdir/${timestamp}_compile_stderr.json
