@@ -178,7 +178,7 @@ in your build scripts or workflow for your chosen project with the command
 `edit-mirror elm`. Also, **please make sure that you run this command from your
 project root!**
 
-For example, instead of running `elm make` to build your project, please run
+For example, instead of running `elm make` to build your project, you would run
 `edit-mirror elm make`.
 
 If you haven't already, we recommend wrapping your build command in a
