@@ -61,7 +61,7 @@ Two quick notes about the installation script:
 
 - Please ensure that the installation directory you choose is on your `PATH`.
     - The default installation directory is `~/bin` (the `bin` folder in your
-      _home_ directory, not the root of your file system). To add this directory
+      home directory, not the root of your file system). To add this directory
       to your path in a `bash`-like shell, add the line
       `export PATH=~/bin:$PATH` to your shell's configuration file (such as
       `~/.bashrc` or `~/.zshrc`).
@@ -169,7 +169,7 @@ Please perform the following steps:
        edit-mirror init
 
 If you would like to use Edit Mirror with multiple programming projects, please
-feel free to repeat this step for the other project roots.
+feel free to repeat this step for other project roots.
 
 ## Part 4: Using the Edit Mirror `elm` wrapper
 
