@@ -10,12 +10,13 @@ usage() {
   echo "Usage: $name <command>"
   echo
   echo "Most useful commands:"
+  echo "  check     Checks whether everything is set up properly"
   echo "  elm       Wraps the 'elm' command to track compilations"
   echo "  help      Shows this help information"
   echo "  init      Initializes Edit Mirror for a project (use in project root)"
   echo "  redact    Redacts sensitive information in Edit Mirror logs (use in project root)"
   echo
-  echo "Other commands: check, id, language-server, uid-gen, update"
+  echo "Other commands: id, language-server, uid-gen, update"
   echo
   echo "Please see https://github.com/plait-lab/edit-mirror/tree/main/docs for more documentation!"
 }

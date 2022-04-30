@@ -85,6 +85,19 @@ in your terminal once installation has completed.
 **We strongly recommend that you review the
 [documentation for our automated redactor tool](./redactor.md).**
 
+To double check that everything is set up properly, you can run
+
+    edit-mirror check
+
+in your terminal. If everything is set up properly, you will see the following
+lines of text:
+
+    [SUCCESS] Sucessfully connected to the Edit Mirror Backend
+    [SUCCESS] Your Edit Mirror ID was recognized as valid by the backend.
+
+If you do not see these lines of text, please reach out to Justin Lubin at
+[justinlubin@berkeley.edu](mailto:////justinlubin@berkeley.edu).
+
 ## Part 2: Configuring your editor to be a language client
 
 At a high level, here is what you need to do to configure any editor that
