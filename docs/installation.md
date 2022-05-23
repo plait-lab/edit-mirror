@@ -135,7 +135,7 @@ the following configuration in your `vimrc` file:
 Then, add the following configuration to your `vimrc` file:
 
     let g:LanguageClient_serverCommands = {
-      \ 'elm': ['edit-mirror', 'language-server'],
+      \ 'elm': ['bash', 'edit-mirror', 'language-server'],
       \ }
 
     let g:LanguageClient_rootMarkers = {
@@ -164,7 +164,7 @@ or `~/.emacs/init.el`):
     (with-eval-after-load 'lsp-mode
       (lsp-register-client
         (make-lsp-client
-          :new-connection (lsp-stdio-connection '("edit-mirror" "language-server"))
+          :new-connection (lsp-stdio-connection '("bash" "edit-mirror" "language-server"))
           :major-modes '(elm-mode)
           :server-id 'edit-mirror
           :priority 10)))
