@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-dir="$(dirname "$0")/edit-mirror-repo"
-name="$(basename "$0")"
+dir="$(dirname "$BASH_SOURCE")/edit-mirror-repo"
+name="$(basename "$BASH_SOURCE")"
 cmd=$1
 
 shift
