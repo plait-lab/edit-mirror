@@ -186,6 +186,12 @@ feel free to repeat this step for other project roots.
 
 ## Part 4: Using the Edit Mirror `elm` wrapper
 
+_**Note:** If you are using a compiler other than the official `elm` binary
+(for example, `elm-pages` or `elm-optimize-level-2`) or you cannot change
+your build script to use a different `elm` executable, then **please ignore this
+step and tell Justin Lubin which compiler you are using** via an email to
+[justinlubin@berkeley.edu](mailto://justinlubin@berkeley.edu)._
+
 For the final step of installation, please replace any use of the `elm` binary
 in your build scripts or workflow for your chosen project with the command
 `edit-mirror elm`. Also, **please make sure that you run this command from your
