@@ -80,7 +80,8 @@ automated redactor), please refer to our [documentation](./) or simply type
 
     edit-mirror
 
-in your terminal once installation has completed.
+in your terminal once installation has completed. (On Windows, you may need
+to run `bash edit-mirror` instead of just `edit-mirror`.)
 
 **We strongly recommend that you review the
 [documentation for our automated redactor tool](./redactor.md).**
@@ -89,8 +90,10 @@ To double check that everything is set up properly, you can run
 
     edit-mirror check
 
-in your terminal. If everything is set up properly, you will see the following
-lines of text:
+in your terminal. (Again, you may need to run `bash edit-mirror check` on
+Windows.)
+
+If everything is set up properly, you will see the following lines of text:
 
     [SUCCESS] Sucessfully connected to the Edit Mirror Backend
     [SUCCESS] Your Edit Mirror ID was recognized as valid by the backend.
@@ -107,7 +110,7 @@ supports the LSP to be an Edit Mirror language client:
 2. Configure the LSP plugin to use the Edit Mirror language server for Elm
    (`.elm`) files. Since the Edit mirror language server should already be on
    your `PATH`, you should be able to simply tell your LSP plugin to run the
-   command `edit-mirror language-server`.
+   command `bash edit-mirror language-server`.
 
 We've provided some tips for a few editors below, but the two steps listed
 above should apply to any editor that supports the LSP!
