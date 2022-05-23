@@ -4,7 +4,7 @@ Thank you for participating in our research study!
 
 If you have any questions about the following installation instructions, please
 do not hesitate to reach out to me, Justin Lubin, at
-[justinlubin@berkeley.edu](mailto:////justinlubin@berkeley.edu)!
+[justinlubin@berkeley.edu](mailto://justinlubin@berkeley.edu)!
 
 ## Dependencies
 
@@ -67,7 +67,7 @@ Two quick notes about the installation script:
       `~/.bashrc` or `~/.zshrc`).
 - The script will ask you for your Edit Mirror ID; this should have been
   provided to you in an email from Justin Lubin
-  [justinlubin@berkeley.edu](mailto:////justinlubin@berkeley.edu).
+  [justinlubin@berkeley.edu](mailto://justinlubin@berkeley.edu).
   If not, please reach out to Justin via email.
 
 Assuming you use a `bash`-like shell, An easy way to run the installation script
@@ -96,7 +96,7 @@ lines of text:
     [SUCCESS] Your Edit Mirror ID was recognized as valid by the backend.
 
 If you do not see these lines of text, please reach out to Justin Lubin at
-[justinlubin@berkeley.edu](mailto:////justinlubin@berkeley.edu).
+[justinlubin@berkeley.edu](mailto://justinlubin@berkeley.edu).
 
 ## Part 2: Configuring your editor to be a language client
 
@@ -210,4 +210,4 @@ And that's it, you've successfully installed Edit Mirror! Thank you once again
 for your participation in this study, and happy coding!
 
 — Justin Lubin
-([justinlubin@berkeley.edu](mailto:////justinlubin@berkeley.edu))
+([justinlubin@berkeley.edu](mailto://justinlubin@berkeley.edu))
