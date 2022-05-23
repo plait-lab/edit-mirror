@@ -90,8 +90,7 @@ To double check that everything is set up properly, you can run
 
     edit-mirror check
 
-in your terminal. (Again, you may need to run `bash edit-mirror check` on
-Windows.)
+in your terminal (`bash edit-mirror check` on Windows).
 
 If everything is set up properly, you will see the following lines of text:
 
