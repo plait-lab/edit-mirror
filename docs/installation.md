@@ -23,6 +23,12 @@ Mirror_ that logs the edits you make to aprogramming project of your choice. We
 implemented this plugin using the language server protocol (LSP), so you should
 be able to use this plugin with any editor that supports the LSP.
 
+All the code that you will install on your computer is open source,
+non-obfuscated, and accessible via the [Edit Mirror repository](https://github.com/plait-lab/edit-mirror).
+If you have concerns about the security of the code that you will install, we
+encourage you to browse this repository yourself or send Justin Lubin an email
+at [justinlubin@berkeley.edu](mailto://justinlubin@berkeley.edu).
+
 Here is an overview of the installation process (described in more detail
 below):
 
@@ -70,8 +76,10 @@ Two quick notes about the installation script:
   [justinlubin@berkeley.edu](mailto://justinlubin@berkeley.edu).
   If not, please reach out to Justin via email.
 
-Assuming you use a `bash`-like shell, An easy way to run the installation script
-is to execute the following command in your terminal:
+Assuming you use a `bash`-like shell, an easy way to run the installation script
+is to execute the following command in your terminal (although we encourage you
+to review the short [installation script](https://raw.githubusercontent.com/plait-lab/edit-mirror/main/utils/install.sh)
+yourself to ensure that it meets your standards for security before running it):
 
     bash <(curl --proto '=https' -sSfL https://raw.githubusercontent.com/plait-lab/edit-mirror/main/utils/install.sh)
 
