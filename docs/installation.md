@@ -23,7 +23,7 @@ Mirror_ that logs the edits you make to aprogramming project of your choice. We
 implemented this plugin using the language server protocol (LSP), so you should
 be able to use this plugin with any editor that supports the LSP.
 
-All the code that you will install on your computer is open source,
+All code that you will install on your computer for this study is open source,
 non-obfuscated, and accessible via the [Edit Mirror repository](https://github.com/plait-lab/edit-mirror).
 If you have concerns about the security of the code that you will install, we
 encourage you to browse this repository yourself or send Justin Lubin an email
