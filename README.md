@@ -16,3 +16,10 @@ We welcome new participants of all experience levels.
 - `language-server/`: Edit Mirror language server
 - `redactor/`: Edit Mirror redactor
 - `utils/`: Short utility scripts for the `edit-mirror` program
+
+## Visual Studio Code extension
+
+The source code for the
+[Edit Mirror Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=plait-lab.edit-mirror)
+is also open source and can be found at the
+[edit-mirror-vscode repository](https://github.com/plait-lab/edit-mirror-vscode/).
