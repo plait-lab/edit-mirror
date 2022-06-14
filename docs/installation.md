@@ -102,8 +102,8 @@ in your terminal (`bash edit-mirror check` on Windows).
 
 If everything is set up properly, you will see the following lines of text:
 
-    [SUCCESS] Sucessfully connected to the Edit Mirror Backend
-    [SUCCESS] Your Edit Mirror ID was recognized as valid by the backend
+    [SUCCESS] Sucessfully connected to the Edit Mirror Backend.
+    [SUCCESS] Your Edit Mirror ID was recognized as valid by the backend.
 
 If you do not see these lines of text, please reach out to Justin Lubin at
 [justinlubin@berkeley.edu](mailto://justinlubin@berkeley.edu).
