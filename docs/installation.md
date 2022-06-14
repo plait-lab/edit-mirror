@@ -225,10 +225,6 @@ for your participation in this study, and happy coding!
 
 ---
 
----
-
----
-
 ## Troubleshooting
 
 ### `Error: Cannot find module` ... `requireStack: []`
