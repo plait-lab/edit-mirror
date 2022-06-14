@@ -89,7 +89,8 @@ automated redactor), please refer to our [documentation](./) or simply type
     edit-mirror
 
 in your terminal once installation has completed. (On Windows, you may need
-to run `bash edit-mirror` instead of just `edit-mirror`.)
+to run `bash edit-mirror` instead of just `edit-mirror` throughout this
+documentation.)
 
 **We strongly recommend that you review the
 [documentation for our automated redactor tool](./redactor.md).**
@@ -98,7 +99,7 @@ To double check that everything is set up properly, you can run
 
     edit-mirror check
 
-in your terminal (`bash edit-mirror check` on Windows).
+in your terminal.
 
 If everything is set up properly, you will see the following lines of text:
 
@@ -191,9 +192,6 @@ Please perform the following steps:
 
        edit-mirror init
 
-   (On Windows, you may need to run `bash edit-mirror init` instead of just
-   `edit-mirror init`.)
-
 If you would like to use Edit Mirror with multiple programming projects, please
 feel free to repeat this step for other project roots.
 
@@ -207,11 +205,11 @@ step and tell Justin Lubin which compiler you are using** via an email to
 
 For the final step of installation, please replace any use of the `elm` binary
 in your build scripts or workflow for your chosen project with the command
-`edit-mirror elm` (or possibly `bash edit-mirror elm` on Windows). Also,
+`edit-mirror elm`. Also,
 **please make sure that you run this command from your project root!**
 
 For example, instead of running `elm make` to build your project, you would run
-`edit-mirror elm make` (or possibly `bash edit-mirror elm` on Windows).
+`edit-mirror elm make`.
 
 If you haven't already, we recommend wrapping your build command in a
 `Makefile` or `build.sh` file so you can keep your build command short and not
