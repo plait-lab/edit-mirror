@@ -223,6 +223,12 @@ for your participation in this study, and happy coding!
 — Justin Lubin
 ([justinlubin@berkeley.edu](mailto://justinlubin@berkeley.edu))
 
+---
+
+---
+
+---
+
 ## Troubleshooting
 
 ### `Error: Cannot find module` ... `requireStack: []`
@@ -231,13 +237,13 @@ Upon trying to run the Edit Mirror plugin, a few participants have encountered
 an error message similar to the following:
 
     Error: Cannot find module '<some path here>/index.js'
-				at Module._resolveFilename (node:internal/modules/cjs/loader:<number>:<number>)
-				at Module._load (node:internal/modules/cjs/loader:<number>:<number>)
-				at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:<number>:<number>)
-				at node:internal/main/run_main_module:<number>:<number> {
-			code: 'MODULE_NOT_FOUND',
-			requireStack: []
-		}
+        at Module._resolveFilename (node:internal/modules/cjs/loader:<number>:<number>)
+        at Module._load (node:internal/modules/cjs/loader:<number>:<number>)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:<number>:<number>)
+        at node:internal/main/run_main_module:<number>:<number> {
+      code: 'MODULE_NOT_FOUND',
+      requireStack: []
+    }
 
 To fix this issue, please set the environment variable `EDIT_MIRROR_DIR` to the
 installation directory that you selected in Step 1 in your shell's configuration
@@ -246,4 +252,4 @@ file.
 For example, if you are using `bash` and you chose an installation directory
 of `~/bin`, you would add the following line to `~/.bashrc`:
 
-		export EDIT_MIRROR_DIR=~/bin
+    export EDIT_MIRROR_DIR=~/bin
