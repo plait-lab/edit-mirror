@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
 dir="$(dirname "$BASH_SOURCE")/edit-mirror-repo"
+
+# Workaround: manually set Edit Mirror directory if environment variable is
+# present
+if [ -n "$EDIT_MIRROR_DIR" ]; then
+  dir="$EDIT_MIRROR_DIR/edit-mirror-repo"
+fi
+
 name="$(basename "$BASH_SOURCE")"
 cmd=$1
 
